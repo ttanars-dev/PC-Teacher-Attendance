@@ -1,0 +1,2294 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PC|Teacherattendance v1</title> <link rel="shortcut icon" type="image/png" href="https://img2.pic.in.th/pic/Pakchong_School-removebg-preview.png">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Sarabun', sans-serif; }
+        .page-section { display: none; } /* Hide all sections initially */
+        .page-section.active { display: block; } /* Show active section */
+        #schoolBanner { max-height: 300px; width: 100%; object-fit: cover; margin-bottom: 0.2rem; } /* Banner style */
+        #schoolLogo { max-height: 60px; width: auto; }
+        #clock-home { font-size: 1.0rem; font-weight: bold; }
+        #MyClockDisplay { font-size: 1.0rem; font-weight: bold;} /* For checkin page clock */
+        .teacher-photo { width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #dee2e6; }
+        .signature-pad-container { position: relative; width: 100%; height: 150px; background-color: #ffffff; cursor: crosshair; border: 1px solid #ced4da; border-radius: 0.375rem; }
+        #signatureCanvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 0.375rem; }
+        #videoFeed { width: 100%; height: auto; max-height: 200px; display: none; background-color: #343a40; } /* Hidden initially */
+        .captured-photo { max-height: 200px; display: block; margin-left: auto; margin-right: auto; background-color: #e9ecef; }
+        .form-label { margin-bottom: 0.5rem; font-weight: bold; }
+        .btn-group-camera button { margin: 0 3px; }
+        .card-title { margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: normal;} /* Adjusted card title size */
+        .card-text { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.2rem;} /* Adjusted card text margin */
+        .card-text-small { font-size: 0.75em; color: rgba(255, 255, 255, 0.8); } /* Smaller text for units */
+        .loading-overlay {
+            position: fixed; /* Changed to fixed for full page */
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.8); z-index: 1060; /* Higher z-index */
+            display: none; /* Hidden by default */ align-items: center; justify-content: center;
+        }
+         .loading-overlay.active { display: flex; } /* Show when active */
+
+        .table-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 5px; vertical-align: middle; transition: transform 0.2s ease-in-out; }
+        .table-img:hover { transform: scale(1.5); } /* Simple hover zoom */
+        .dashboard-table-img, .stats-table-img { cursor: pointer; } /* Add pointer cursor */
+        #dashboardTable td, #statsTable td { vertical-align: middle; font-size: 0.9rem; } /* Adjust table font size */
+        #dashboardTable th, #statsTable th { font-size: 0.9rem; }
+        .small-text { font-size: 0.85em; }
+        .teacher-profile-card { background-color: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+        .teacher-profile-card img { width: 80px; height: 80px; }
+
+        /* DataTables specific adjustments */
+        .dataTables_wrapper .row { margin-bottom: 0.5rem;}
+         div.dataTables_wrapper div.dataTables_filter input { width: 150px; display: inline-block; margin-left: 0.5em;}
+         div.dataTables_wrapper div.dataTables_length select { width: auto; display: inline-block; }
+         div.dataTables_wrapper div.dataTables_info,
+         div.dataTables_wrapper div.dataTables_paginate { padding-top: 0.5em; font-size: 0.85rem;}
+
+        /* Footer style */
+        .footer { background-color: #e9ecef; color: #6c757d; padding: 10px 0; font-size: 0.8em;}
+        .footer a { color: #dc3545; text-decoration: none; }
+
+         /* Navigation Buttons */
+         .main-nav .btn { margin: 0 2px; }
+
+        @media (max-width: 767.98px) {
+            .teacher-photo { max-width: 200px; height: 100px; margin-bottom: 1rem; }
+            #videoFeed, .captured-photo { max-width: 200px; max-height: 250px; }
+            .signature-pad-container { height: 120px; }
+            .card-text { font-size: 1.2rem; }
+            #schoolLogo { max-height: 50px; }
+            .card-header h5, .card-header h6 { font-size: 0.9rem;}
+            .main-nav .btn { font-size: 0.8rem; padding: 0.3rem 0.5rem;} /* Adjust button size */
+             /* Adjust datatables filter/length */
+            div.dataTables_wrapper div.dataTables_filter { text-align: left !important; float: none !important; }
+            div.dataTables_wrapper div.dataTables_length {text-align: left !important; float: none !important; margin-top: 0.5rem;}
+            div.dataTables_wrapper div.dataTables_filter input { width: auto;}
+             #schoolBanner { max-height: 200px; } /* Smaller banner on mobile */
+        }
+    </style>
+</head>
+<body>
+     <div id="pageLoadingOverlay" class="loading-overlay">
+         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+             <span class="visually-hidden">Loading...</span>
+         </div>
+     </div>
+
+    <div class="container-fluid mt-3 mb-4">
+
+        <div class="card shadow-sm border-primary position-relative">
+
+            <div class="card-body p-3 p-md-4">
+
+                <img src="https://lh5.googleusercontent.com/d/1fo0zr7v4H4EPKYyS8nK_a6MDawQ1oBS4" alt="แบนเนอร์โรงเรียน" id="schoolBanner" class="img-fluid rounded"> 
+				<div class="container-fluid text-center my-1 mb-2 main-nav btn-group shadow-sm flex-wrap" role="group" aria-label="Main Navigation"> 
+				     <div class="col mb-2">
+					 <button type="button" class="btn btn-outline-primary active mt-1 mb-1" data-target="homePage">
+                     <i class="fas fa-home me-1"></i> หน้าแรก
+                     </button>
+                    <button type="button" class="btn btn-outline-primary mt-1 mb-1" data-target="dashboardPage">
+                        <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                    </button>
+                    <button type="button" class="btn btn-outline-primary mt-1 mb-1" data-target="checkinPage">
+                        <i class="fas fa-edit me-1"></i> บันทึกข้อมูล
+                    </button>
+                    <button type="button" class="btn btn-outline-primary mt-1 mb-1" data-target="searchPage">
+                        <i class="fas fa-search me-1"></i> ค้นหาสถิติ
+                    </button>
+					<button type="button" class="btn btn-outline-primary mt-1 mb-1" data-bs-toggle="modal" data-bs-target="#loginProfileModal">
+					<i class="fas fa-user-edit me-1"></i> แก้ไขข้อมูลส่วนตัว
+					</button>
+					</div>
+                </div>
+
+				<!-- ///modal แก้ไขข้อมูลส่วนตัว ///-->
+				<div class="modal fade" id="loginProfileModal" tabindex="-1" aria-labelledby="loginProfileModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-dialog-centered">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="loginProfileModalLabel"><i class="fas fa-sign-in-alt me-2"></i> เข้าสู่ระบบเพื่อแก้ไขข้อมูลส่วนตัว</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+								<form id="profileLoginForm">
+									<div class="mb-3">
+										<label for="profileLoginPhone" class="form-label"><i class="fas fa-phone me-2"></i> หมายเลขโทรศัพท์ (ชื่อผู้ใช้)</label>
+										<input type="tel" class="form-control" id="profileLoginPhone" name="profileLoginPhone" required placeholder="กรอกหมายเลขโทรศัพท์">
+									</div>
+									<div class="mb-3">
+										<label for="profileLoginPassword" class="form-label"><i class="fas fa-key me-2"></i> รหัสครูผู้สอน (รหัสผ่าน)</label>
+										<input type="password" class="form-control" id="profileLoginPassword" name="profileLoginPassword" required placeholder="กรอกรหัสครูผู้สอน">
+									</div>
+									<div class="d-grid">
+										<button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt me-1"></i> เข้าสู่ระบบ</button>
+									</div>
+								</form>
+								<div class="text-center mt-3">
+									<!--<a href="#" id="forgotPasswordLink" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">ลืมรหัสผ่าน?</a>-->
+									<a style="color:#1702f7;cursor:pointer" target="_blank" href="https://line.me/ti/p/3F7VGrqgUr"><i class="fa-solid fa-user-tie fa-beat"></i> ลืมรหัสผ่านติดต่อ อ.ธนสาร สีรักษ์</a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-dialog-centered">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="forgotPasswordModalLabel"><i class="fas fa-question-circle me-2"></i> แจ้งลืมรหัสผ่าน</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<div class="modal-body">
+								<form id="forgotPasswordForm">
+									<div class="mb-3">
+										<label for="forgotPasswordEmail" class="form-label"><i class="fas fa-envelope me-2"></i> อีเมลที่ลงทะเบียนไว้</label>
+										<input type="email" class="form-control" id="forgotPasswordEmail" name="forgotPasswordEmail" required placeholder="กรอกอีเมลของคุณ">
+									</div>
+									<div class="d-grid">
+										<button type="submit" class="btn btn-warning"><i class="fas fa-paper-plane me-1"></i> ส่งคำขอ</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal fade" id="editProfileDataModal" tabindex="-1" aria-labelledby="editProfileDataModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+					<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+						<div class="modal-content">
+							<div class="modal-header">
+								<h5 class="modal-title" id="editProfileDataModalLabel"><i class="fas fa-user-cog me-2"></i> แก้ไขข้อมูลส่วนตัว</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeEditProfileModal"></button>
+							</div>
+							<div class="modal-body">
+								<form id="editProfileForm" enctype="multipart/form-data">
+									<input type="hidden" id="editTeacherId" name="teacherId">
+									<div class="row">
+										<div class="col-md-4 text-center mb-3">
+											<img src="https://placehold.co/150x150/adb5bd/ffffff?text=Profile" alt="รูปโปรไฟล์" id="editProfileImagePreview" class="img-thumbnail mb-2" style="width: 150px; height: 150px; object-fit: cover;">
+											<input type="file" class="form-control form-control-sm" id="editProfileImage" name="profileImage" accept="image/*">
+											<small class="form-text text-muted">เลือกรูปโปรไฟล์ใหม่ (ถ้าต้องการ)</small>
+										</div>
+										<div class="col-md-8">
+											<div class="row">
+												<div class="col-md-6 mb-3">
+													<label for="editProfileFirstName" class="form-label">ชื่อ</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+													<input type="text" class="form-control" id="editProfileFirstName" name="firstName" disabled>
+												</div>
+												<div class="col-md-6 mb-3">
+													<label for="editProfileLastName" class="form-label">สกุล</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+													<input type="text" class="form-control" id="editProfileLastName" name="lastName" disabled>
+												</div>
+											</div>
+											<div class="mb-3">
+												<label for="editProfileDepartment" class="form-label">กลุ่มสาระการเรียนรู้</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+												<input type="text" class="form-control" id="editProfileDepartment" name="department" disabled>
+											</div>
+											<div class="mb-3">
+												<label for="editProfileLevel" class="form-label">ระดับ (เช่น ม.1, ม.ปลาย)</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+												<input type="text" class="form-control" id="editProfileLevel" name="level">
+											</div>
+										</div>
+									</div>
+									<hr>
+									<h6 class="mb-3">ข้อมูลการเข้าสู่ระบบและความปลอดภัย</h6>
+									<div class="row">
+										<div class="col-md-6 mb-3">
+											<label for="editProfilePhone" class="form-label">หมายเลขโทรศัพท์ (ชื่อผู้ใช้)</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+											<input type="tel" class="form-control" id="editProfilePhone" name="phoneNumber" required>
+										</div>
+										<div class="col-md-6 mb-3 style=">
+											<label for="editProfilePassword" class="form-label">รหัสผ่านใหม่ (รหัสครูผู้สอน ตัวเลข 4 ตัว)</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+											<input type="password" class="form-control" id="editProfilePassword" name="newPassword" placeholder="เปลี่ยนรหัสผ่านติดต่อ ADMIN" maxlength="4" inputmode="numeric" pattern="[0-9]*" disabled>
+											<!--<small class="form-text text-muted">ต้องการเปลี่ยนรหัสผ่านติดต่อ ADMIN</small>-->
+											<a style="color:#1702f7;cursor:pointer;font-size: 14px;" target="_blank" href="https://line.me/ti/p/3F7VGrqgUr"><i class="fa-solid fa-user-tie fa-beat"></i> ต้องการเปลี่ยนรหัสผ่านติดต่อ อ.ธนสาร สีรักษ์</a>
+										</div>
+									</div>
+									<div class="mb-3">
+										<label for="editProfileEmail" class="form-label">อีเมล</label><a helf="#" style="color:#f72302;font-size: 14px;"> *</a>
+										<input type="email" class="form-control" id="editProfileEmail" name="email" placeholder="กรอก email " required>
+									</div>
+									<div class="d-grid mt-4">
+										<button type="submit" class="btn btn-success btn-lg"><i class="fas fa-save me-1"></i> บันทึกการเปลี่ยนแปลง</button>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
+				<!-- ///สิ้นสุด modal แก้ไขข้อมูลส่วนตัว ///-->
+
+
+
+
+                <div id="homePage" class="page-section active">
+
+                <div class="container-fluid mt-0 mb-1 bg-light">
+                <marquee behavior="scroll" direction="left"
+                style="color:	#000000; font-size: 16px;mt-2 mb-2" onmouseover="this.stop();" onmouseout="this.start();"><h6 style="mt-2">
+                <h5><small><img src="https://lh5.googleusercontent.com/d/1cD2nVKNscJg1DJPnkaakah7Nz4ez_BZS" height="12" width="25" > ยินดีต้อนรับเข้าสู่ระบบลงเวลาครูที่ปรึกษาและครูเวรประจำวัน โรงเรียนปากช่อง :: ออกแบบและพัฒนาโดย KT | Tanasarn Sirak <img src="https://lh5.googleusercontent.com/d/1cD2nVKNscJg1DJPnkaakah7Nz4ez_BZS" height="12" width="25" ></small></h5></marquee>
+                </div>
+
+
+                    <div id="clock-home" class="alert alert-info text-center shadow-sm py-2 mt-3" role="alert">
+                         <i class="fas fa-clock me-2"></i> กำลังโหลดเวลา...
+                     </div>
+
+                    <div class="text mb-4">
+                        <div id="info" style="font-size:14px" class="alert alert-warning text-left shadow-sm" role="alert">
+                            <i class="fas fa-info-circle me-2"></i><b> คำชี้แจงการลงเวลา</b>
+                            <br>1. <b>ครูผู้ปฏิบัติหน้าที่ ลงเวลาตามช่วงเวลาที่กำหนด</b></br>
+                            2. <b>ครูเวรยืนประตู:</b> เช้า <b>07:00-07:20 น.</b> || บ่าย <b>15:50-17:10 น.</b></br>
+                            3. <b>ครูตรวจอาคาร:</b> เช้า <b>07:00-07:50 น.</b> || บ่าย <b>15:20-17:30 น.</b></br>
+                            4. <b>ครูระดับ:</b> เช้า <b>07:40-08:00 น.</b></br>
+                            5. คลิกที่ปุ่ม <button type="button" class="btn btn-sm btn-outline-primary disabled py-0"><i class="fas fa-edit me-1"></i> บันทึกข้อมูล</button> ด้านบนเพื่อลงเวลา </br>
+                            6. สอบถาม/แจ้งปัญหาการใช้งาน 👉 <a style="color:#000;cursor:pointer" target="_blank" href="https://line.me/ti/p/3F7VGrqgUr">อ.ธนสาร สีรักษ์</a>
+                        </div>
+                        <hr>
+
+<!--                         <h5 class="mt-4 mb-3"><i class="fas fa-chart-bar me-2 text-success"></i> สถิติการบันทึกข้อมูลวันนี้</h5>
+                        <div class="row g-3 mb-3">
+                           <div class="col-md-4">
+                               <div class="card text-white bg-primary shadow-sm h-100">
+                                   <div class="card-body p-2">
+                                       <h6 class="card-title"><i class="fas fa-users me-1"></i> ครูบันทึกข้อมูลวันนี้</h6>
+                                       <p class="card-text" id="homeLoggedToday">-</p>
+                                        <small class="card-text-small">(คน)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-dark bg-info shadow-sm h-100">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title"><i class="fas fa-door-open me-1"></i> เวรยืนประตู (บันทึกวันนี้)</h6>
+                                        <p class="card-text" id="homeGateDutyToday">-</p>
+                                        <small class="card-text-small">(คน)</small>
+                                        </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-dark bg-warning shadow-sm h-100">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title"><i class="fas fa-building me-1"></i> ตรวจอาคาร (บันทึกวันนี้)</h6>
+                                        <p class="card-text" id="homeBuildingDutyToday">-</p>
+                                         <small class="card-text-small">(คน)</small>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr> -->
+						
+			<div class="text-center my-4"> <button type="button" class="btn btn-success btn-lg mx-2 mb-2 me-2" id="goToAttendanceBtn">
+                        <i class="fas fa-calendar-check me-2"></i>ลงเวลาปฏิบัติหน้าที่ประจำวัน
+                        </button>
+                        <a href="https://sites.google.com/view/time-pcschool/Time-record/?openExternalBrowser=1" target="_blank" class="btn btn-info btn-lg mx-2" role="button">
+                            <i class="fas fa-user-check me-2"></i>เช็คชื่อนักเรียน
+                        </a>
+                    </div>
+						
+						
+						
+						
+                         </div>
+                      <div class="text-center mt-4">
+                         <a style="color:black;text-decoration:none;font-size:12px"><b><i class="fas fa-chart-line"></i> ผู้ใช้งาน : </b></a>
+                         <a href="https://www.freecounterstat.com" title="hit counters for websites"><img src="https://counter4.optistats.ovh/private/freecounterstat.php?c=uxl7ktjxcfulq4s18eams772gxzgjehu" border="0" title="free hit counter" alt="free hit counter" style="vertical-align: middle;"></a>
+                    </div>
+                </div>
+                <div id="dashboardPage" class="page-section">
+                <div id="dashboardPage-t" class="alert alert-info text-center shadow-sm py-2" role="alert">
+                           <h5 class="mb-3 mt-3"><i class="fas fa-tachometer-alt me-2 text-primary"></i><b> Dashboard สรุปข้อมูล</h5>
+                     </div>
+
+			<div class="row g-3 mb-3">
+                         <div class="col-md-4">
+                             <div class="card text-white bg-success shadow-sm h-100">
+                                 <div class="card-body p-2">
+                                     <h6 class="card-title"><i class="fas fa-users me-1"></i> ครูมาปฏิบัติหน้าที่</h6>
+                                     <p class="card-text" id="loggedTodayCount">0 / 0</p>
+                                     <small class="card-text-small">(บันทึกวันนี้ / ครูทั้งหมด)</small>
+                                 </div>
+                             </div>
+                         </div>
+                          <div class="col-md-4">
+                             <div class="card text-dark bg-danger shadow-sm h-100">
+                                 <div class="card-body p-2">
+                                     <h6 class="card-title text-white"><i class="fas fa-door-open me-1"></i> เวรยืนประตู (บันทึก)</h6>
+                                     <p class="card-text text-white" id="gateDutyCount">0</p>
+                                     <small class="card-text-small text-white">(คน - วันนี้)</small>
+                                     </div>
+                             </div>
+                         </div>
+                         <div class="col-md-4">
+                             <div class="card text-dark bg-warning shadow-sm h-100">
+                                 <div class="card-body p-2">
+                                     <h6 class="card-title"><i class="fas fa-building me-1"></i> ตรวจอาคาร (บันทึก)</h6>
+                                     <p class="card-text" id="buildingDutyCount">0</p>
+                                     <small class="card-text-small text-dark ">(คน - วันนี้)</small>
+                                      </div>
+                             </div>
+                         </div>
+
+                        <div class="col-md-4"> <div class="card text-white bg-primary shadow-sm h-100"> <div class="card-body p-2">
+                                <h6 class="card-title text-white"><i class="fas fa-chalkboard-teacher me-1"></i> ระดับ (บันทึก)</h6>
+                                <p class="card-text" id="levelDutyCount">0</p>
+                                <small class="card-text-small text-white">(คน - วันนี้)</small>
+                                </div>
+                             </div>
+                        </div>
+                        <div class="col-md-4"> <div class="card text-white bg-secondary shadow-sm h-100"> <div class="card-body p-2">
+                                <h6 class="card-title text-white"><i class="fas fa-users-cog me-1"></i> กรรมการประจำจุด (บันทึก)</h6>
+                                <p class="card-text text-white" id="pointCommitteeDutyCount">0</p>
+                                <small class="card-text-small text-white">(คน - วันนี้)</small>
+                            </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card text-black bg-info shadow-sm h-100"> <div class="card-body p-2">
+                                    <h6 class="card-title text-black"><i class="fas fa-user-clock me-1"></i> ลา / ไปราชการ</h6>
+                                    <p class="card-text text-black" id="leaveOrTripCount">0</p>
+                                    <small class="card-text-small text-black">(คน - วันนี้)</small>
+                                </div>
+                            </div>
+                        </div>
+                        </div>  
+
+			
+                     <div class="row g-2 mb-3 align-items-center bg-light p-2 rounded border shadow-sm">
+                         <div class="col-lg-3 col-md-6">
+                             <label for="dashboardDateFilter" class="form-label small mb-0">เลือกวันที่:</label>
+                             <input type="text" class="form-control form-control-sm" id="dashboardDateFilter" name="dashboardDateFilter">
+                         </div>
+                         <div class="col-lg-2 col-md-6">
+                             <label for="dashboardLevelFilter" class="form-label small mb-0">ระดับชั้น:</label> <select class="form-select form-select-sm" id="dashboardLevelFilter">
+                                 <option value="all" selected>ทั้งหมด</option>
+                                 </select>
+                         </div>
+                         <div class="col-lg-3 col-md-6">
+                             <label for="dashboardDutyFilter" class="form-label small mb-0">การปฏิบัติหน้าที่:</label>
+                             <select class="form-select form-select-sm" id="dashboardDutyFilter">
+                                 <option value="all" selected>ทั้งหมด</option>
+                                 <option value="เวรยืนประตู">เวรยืนประตู</option>
+                                 <option value="ตรวจอาคาร">ตรวจอาคาร</option>
+                                 <option value="ระดับ">ระดับ</option>
+                                 <option value="กรรมการประจำจุด">กรรมการประจำจุด</option>
+                                 <option value="ลา">ลา</option>
+                                 <option value="ไปราชการ">ไปราชการ</option>
+                                 <option value="มา (ไม่ระบุ)">มา (ไม่ระบุ)</option>
+                             </select>
+                         </div>
+                          <div class="col-lg-2 col-md-3 d-grid align-self-end">
+                              <button class="btn btn-sm btn-primary" id="refreshDashboardBtn" title="โหลดข้อมูลใหม่">
+                                  <i class="fas fa-sync-alt"></i> โหลดใหม่
+                              </button>
+                          </div>
+                          <div class="col-lg-2 col-md-3 align-self-end text-end text-muted small" id="dashboardTableDate">
+                               ข้อมูล ณ วันที่: -
+                           </div>
+                     </div>
+                     <div class="table-responsive">
+                         <table id="dashboardTable" class="table table-striped table-bordered table-hover" style="width:100%">
+                             <thead class="table-light">
+                                 <tr>
+                                     <th>รูป</th> <th>ชื่อ - สกุล</th> <th>ระดับชั้น</th> <th>ปฏิบัติหน้าที่/สถานะ</th> <th>เวลาบันทึก</th> </tr>
+                             </thead>
+                             <tbody>
+                                 </tbody>
+                         </table>
+                     </div>
+                     </div>
+                <div id="checkinPage" class="page-section">
+
+                <div class="row alert alert-info text-center shadow-sm py-2" role="alert" ><b><div class="text-dark mt-1 ml-1 text-center" id="MyClockDisplay" onload="showTime()"></div></b></div>
+
+                    <h5 class="mb-4"><i class="fas fa-edit me-2 text-primary"></i> บันทึกข้อมูลการปฏิบัติหน้าที่</h5>
+                    <form id="checkinForm" novalidate>
+                         <div class="mb-3">
+                             <label for="teacherId" style="margin-left: 12px; margin-left: 15px;
+                             margin-top: -14px; position: absolute; background-color: white; border: 2px solid white;"><i class="fas fa-id-card me-2 text-primary"></i>รหัสครูผู้สอน (4 ตัว)</label>
+                             <input type="tel" class="form-control form-control-xl border border-danger "  style="height: 3.8rem;" id="teacherId" name="teacherId" required placeholder="กรอกรหัสครู (4 ตัว)" maxlength="4" inputmode="numeric" pattern="[0-9]*"> <div id="teacherLookupStatus" class="form-text mt-1 small text-muted"></div>
+                         </div>
+
+                         <div id="teacherInfo" class="form-section mb-3" style="display:none;">
+                              <div class="row align-items-center gx-2 gy-2">
+                                 <div class="col-auto">
+                                     <img src="https://placehold.co/100x100/adb5bd/ffffff?text=%E0%B8%A3%E0%B8%B9%E0%B8%9B%E0%B8%84%E0%B8%A3%E0%B8%B9" alt="รูปครู" id="teacherPhoto" class="teacher-photo">
+                                 </div>
+                                 <div class="col">
+                                     <p class="mb-1 small"><strong><i class="fas fa-user fa-fw me-1"></i>ชื่อ-สกุล:</strong> <span id="teacherName"></span></p>
+                                     <p class="mb-1 small"><strong><i class="fas fa-chalkboard-teacher fa-fw me-1"></i>กลุ่มสาระฯ:</strong> <span id="teacherDepartment"></span></p>
+                                     <p class="mb-0 small"><strong><i class="fas fa-user-tie fa-fw me-1"></i>ตำแหน่ง:</strong> <span id="teacherPosition"></span></p>
+                                     <input type="hidden" id="hiddenTeacherName" name="teacherName">
+                                     <input type="hidden" id="hiddenTeacherDepartment" name="teacherDepartment">
+                                 </div>
+                             </div>
+                         </div>
+
+                        <div id="dutyStatusSection" class="form-section border-top pt-3 mt-3" style="display:none;">
+                            <label class="form-label"><i class="fas fa-clipboard-check me-2 text-primary"></i>สถานะการปฏิบัติหน้าที่</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyStatus" id="statusPresent" value="มา" required>
+                                <label class="form-check-label" for="statusPresent"> <i class="fas fa-user-check text-success me-1"></i> มาปฏิบัติหน้าที่ </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyStatus" id="statusLeave" value="ลา">
+                                <label class="form-check-label" for="statusLeave"> <i class="fas fa-calendar-times text-warning me-1"></i> ลา </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyStatus" id="statusBusinessTrip" value="ไปราชการ">
+                                <label class="form-check-label" for="statusBusinessTrip"> <i class="fas fa-plane-departure text-info me-1"></i> ไปราชการ </label>
+                            </div>
+                            <div id="dutyStatusError" class="invalid-feedback d-block small"></div>
+                            <div class="section-loading-overlay" id="dutySubSectionsLoading" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                            </div>
+                        </div>
+
+                        <div id="dutyTypeSection" class="form-section border-top pt-3 mt-3" style="display:none;">
+                            <label class="form-label"><i class="fas fa-tasks me-2 text-secondary"></i>เลือกการปฏิบัติหน้าที่</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyType" id="dutyGate" value="เวรยืนประตู">
+                                <label class="form-check-label" for="dutyGate"> <i class="fas fa-door-open text-success me-1"></i> เวรยืนประตู </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyType" id="dutyBuilding" value="ตรวจอาคาร">
+                                <label class="form-check-label" for="dutyBuilding"> <i class="fas fa-building text-warning me-1"></i> ตรวจอาคาร </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyType" id="dutyLevel" value="ระดับ">
+                                <label class="form-check-label" for="dutyLevel"> <i class="fas fa-chalkboard-teacher text-info me-1"></i> ระดับ </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="dutyType" id="dutyPointCommittee" value="กรรมการประจำจุด">
+                                <label class="form-check-label" for="dutyPointCommittee"> <i class="fas fa-users-cog text-secondary me-1"></i> กรรมการประจำจุด </label>
+                            </div>
+                            <div id="dutyTypeError" class="invalid-feedback d-block small"></div>
+                        </div>
+
+                        <div id="remarksSection" class="form-section border-top pt-3 mt-3" style="display:none;">
+                            <label for="remarks" class="form-label"><i class="fas fa-pencil-alt me-2 text-secondary"></i>หมายเหตุ (เหตุผลการลา/ไปราชการ)</label>
+                            <textarea class="form-control" id="remarks" name="remarks" rows="2" placeholder="ระบุเหตุผลการลา หรือรายละเอียดการไปราชการ"></textarea>
+                            <div id="remarksError" class="invalid-feedback d-block small"></div>
+                        </div>
+
+                        <div id="locationSection" class="form-section border-top pt-3 mt-3" style="display:none;">
+                            <label class="form-label"><i class="fas fa-map-marker-alt me-2 text-danger"></i>ตำแหน่งที่ตั้งปัจจุบัน</label>
+                            <div id="locationInfo" class="form-control form-control-sm bg-light" style="min-height: 35px;">
+                                <span class="text-muted small"></span> <button type="button" class="btn btn-xs btn-outline-secondary ms-2 py-0 px-1 float-end" id="getLocationBtn" title="ลองค้นหาตำแหน่งอีกครั้ง"> <i class="fas fa-sync"></i> </button>
+                            </div>
+                            <input type="hidden" id="latitude" name="latitude"> <input type="hidden" id="longitude" name="longitude">
+                            <div id="locationError" class="form-text text-danger mt-1 small"></div>
+                        </div>
+
+                        <div id="photoSection" class="form-section border-top pt-3 mt-3" style="display:none;">
+                            <label class="form-label"><i class="fas fa-camera me-2 text-info"></i>ถ่ายภาพยืนยัน ณ ขณะนั้น</label>
+                            <div class="row g-2 align-items-start">
+                                <div class="col-md-6 text-center">
+                                    <video id="videoFeed" playsinline autoplay muted class="img-fluid border rounded bg-dark w-100"></video> <canvas id="photoCanvas" style="display:none;"></canvas>
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <img id="capturedPhotoPreview" src="https://placehold.co/300x200/e9ecef/6c757d?text=%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B8%95%E0%B8%B1%E0%B8%A7%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87" alt="ภาพที่ถ่าย" class="img-fluid border rounded mb-2 captured-photo">
+                                    <input type="hidden" id="photoData" name="photoData"> </div>
+                            </div>
+                            <div class="mt-2 text-center btn-group-camera">
+                                <button type="button" class="btn btn-sm btn-info" id="startCameraBtn"><i class="fas fa-video me-1"></i> เปิดกล้อง</button>
+                                <button type="button" class="btn btn-sm btn-success" id="capturePhotoBtn" disabled><i class="fas fa-camera-retro me-1"></i> ถ่ายภาพ</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="resetPhotoBtn" disabled><i class="fas fa-undo me-1"></i> ถ่ายใหม่</button>
+                            </div>
+                            <div id="cameraError" class="form-text text-danger mt-1 text-center small"></div>
+                            <div id="photoError" class="invalid-feedback d-block text-center small"></div>
+                        </div>
+						
+						
+                        <div id="signatureSection" class="form-section border-top pt-3 mt-3" style="display:none;">
+                            <label for="signatureCanvas" class="form-label"><i class="fas fa-signature me-2 text-success"></i>ลงลายมือชื่อ</label>
+                            <div class="signature-pad-container"> <canvas id="signatureCanvas"></canvas> </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="resetSignatureBtn"><i class="fas fa-eraser me-1"></i> ล้างลายเซ็น</button>
+                            <input type="hidden" id="signatureData" name="signatureData"> <div id="signatureError" class="invalid-feedback d-block small"></div>
+                        </div>
+
+                        <div id="submitButtonSection" class="form-section d-grid gap-2 mt-4 pt-3 border-top" style="display:none;">
+                            <button type="submit" class="btn btn-secondary btn-lg fw-bold shadow" id="submitBtn" disabled>
+                            <i class="fas fa-times-circle me-2"></i> กรอกข้อมูลให้ครบ
+                            </button>
+                        </div>
+
+                         <div id="statusMessage" class="mt-3 small"></div> </form>
+                </div>
+                 <div id="searchPage" class="page-section">
+                    <div id="searchPage-t" class="alert alert-info text-center shadow-sm py-2" role="alert">
+                           <h5 class="mb-3 mt-3"><i class="fas fa-search me-2 text-primary"></i><b> ค้นหาสถิติการปฏิบัติหน้าที่</h5>
+                     </div>
+
+                    <div class="row g-2 mb-3 align-items-end bg-light p-3 rounded border shadow-sm">
+                        <div class="col-md-4">
+                            <label for="searchTeacherId" style="margin-left: 12px; margin-left: 15px;
+                             margin-top: -14px; position: absolute; background-color: white; border: 2px solid white;"><i class="fas fa-id-card me-2 text-primary"></i>รหัสครูผู้สอน (4 ตัว)</label>
+                            <input type="tel" class="form-control form-control  border border-danger "  style="height: 3.3rem;" id="searchTeacherId" placeholder="กรอกรหัสครู (4 ตัว)" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <div class="col-md-3 d-grid">
+                            <button class="btn btn-lg btn-primary" id="searchStatsBtn">
+                                <i class="fas fa-search"></i> ค้นหา
+                            </button>
+                        </div>
+                        <div class="col-md-5">
+                             <div id="searchMessage" class="mt-2 small text-muted"></div>
+                        </div>
+                    </div>
+                    <div id="searchResultArea" style="display: none;">
+                        <hr>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6 col-md-3">
+                                <div class="card text-white bg-primary shadow-sm h-100">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title"><i class="fas fa-calendar-alt me-1"></i> วันที่บันทึก</h6>
+                                        <p class="card-text" id="statsTotalDays">0</p>
+                                        <small class="card-text-small">(วัน)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="card text-white bg-success shadow-sm h-100">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title"><i class="fas fa-user-check me-1"></i> ครั้งที่มา</h6>
+                                        <p class="card-text" id="statsPresentDays">0</p>
+                                         <small class="card-text-small">(ครั้ง)</small>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="col-sm-6 col-md-3">
+                                <div class="card text-dark bg-warning shadow-sm h-100">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title"><i class="fas fa-calendar-times me-1"></i> ครั้งที่ลา</h6>
+                                        <p class="card-text" id="statsLeaveDays">0</p>
+                                         <small class="card-text-small">(ครั้ง)</small>
+                                     </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 col-md-3">
+                                <div class="card text-white bg-info shadow-sm h-100">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title"><i class="fas fa-plane-departure me-1"></i> ครั้งที่ไปราชการ</h6>
+                                         <p class="card-text" id="statsTripDays">0</p>
+                                        <small class="card-text-small">(ครั้ง)</small>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                        <div id="statsTeacherInfo" class="teacher-profile-card">
+                            <div class="row align-items-center gx-3">
+                                <div class="col-auto">
+                                    <img src="https://placehold.co/80x80/adb5bd/ffffff?text=?" alt="รูปครู" id="statsTeacherPhoto" class="rounded-circle">
+                                </div>
+                                <div class="col-auto">
+                                    <h6 class="mb-1" >ชื่อ - สกุล :: </h6>
+                                    <p class="mb-0 small-text text-muted" >กลุ่มสาระฯ :: </p>
+                                    <p class="mb-0 small-text text-muted" >ระดับชั้น:: </p>
+                                </div>
+
+                                <div class="col-auto">
+                                    <h6 class="mb-1" id="statsTeacherName">ชื่อ - สกุล</h6>
+                                    <p class="mb-0 small-text text-muted" id="statsTeacherDepartment">กลุ่มสาระการเรียนรู้</p>
+                                    <p class="mb-0 small-text text-muted" id="statsTeacherLevel">N/A</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-2 mb-3 align-items-center bg-light p-2 rounded border">
+                           <div class="col-md-5">
+                               <label for="statsDateFilter" class="form-label small mb-0">เลือกช่วงวันที่บันทึก:</label>
+                               <input type="text" class="form-control form-control-sm" id="statsDateFilter" name="statsDateFilter">
+                           </div>
+                           <div class="col-md-4">
+                               <label for="statsDutyFilter" class="form-label small mb-0">กรองการปฏิบัติหน้าที่:</label>
+                               <select class="form-select form-select-sm" id="statsDutyFilter">
+                                   <option value="" selected>ทั้งหมด</option>
+                                   <option value="เวรยืนประตู">เวรยืนประตู</option>
+                                   <option value="ตรวจอาคาร">ตรวจอาคาร</option>
+                                   <option value="ระดับ">ระดับ</option>
+                                   <option value="กรรมการประจำจุด">กรรมการประจำจุด</option>
+                                   <option value="ลา">ลา</option>
+                                   <option value="ไปราชการ">ไปราชการ</option>
+                                   <option value="มา \(ไม่ระบุ\)">มา (ไม่ระบุ)</option> </select>
+                           </div>
+                            <div class="col-md-3 d-grid align-self-end">
+                              <button class="btn btn-sm btn-outline-secondary" id="resetStatsFilterBtn" title="ล้างตัวกรอง">
+                                  <i class="fas fa-times"></i> ล้างตัวกรอง
+                              </button>
+                          </div>
+                       </div>
+                       <h6><i class="fas fa-history me-1"></i> ประวัติการบันทึกข้อมูล</h6>
+                        <div class="table-responsive">
+                             <table id="statsTable" class="table table-striped table-bordered table-hover" style="width:100%">
+                                 <thead class="table-light">
+                                     <tr>
+                                         <th>รูปที่บันทึก</th> <th>ระดับชั้น</th> <th>ปฏิบัติหน้าที่/สถานะ</th> <th>วันที่ เวลาบันทึก</th> </tr>
+                                 </thead>
+                                 <tbody>
+                                     </tbody>
+                             </table>
+                         </div>
+                    </div>
+                    </div>
+                 <footer class="footer mt-4 text-center">
+                    <div class="container">
+                         <a href="https://line.me/ti/p/3F7VGrqgUr" target="_blank"><i class="fa-solid fa-comments"></i> สอบถาม/แจ้งปัญหา</a> || ©️KT|Tanasarn Sirak (v2)
+                     </div>
+                 </footer>
+                 </div> </div> </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.2.0/dist/signature_pad.umd.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment/locale/th.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script>
+        // --- Apps Script Web App URL ---
+        // !!! สำคัญ: ใส่ URL ที่ถูกต้องหลังจาก Deploy Apps Script v5.1 (ที่แก้ไขแล้ว) !!!
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxGDiaBYxsXesotxCB-8sreCkYrRl4hUC0LTqCnXrSp8_QYM8r3YNVyZ3HYDyaHdmGeKw/exec'; // <<--- PASTE YOUR DEPLOYED URL HERE
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ... (existing DOMContentLoaded code) ...
+
+		const goToAttendanceBtn = document.getElementById('goToAttendanceBtn');
+		if (goToAttendanceBtn) {
+			goToAttendanceBtn.addEventListener('click', () => {
+				switchPage('checkinPage');
+			});
+			}
+		});
+
+	// ... #editProfile ...
+	const profileLoginForm = document.getElementById('profileLoginForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const editProfileForm = document.getElementById('editProfileForm');
+    const editProfileImageInput = document.getElementById('editProfileImage');
+    const editProfileImagePreview = document.getElementById('editProfileImagePreview');
+
+    let currentEditingTeacherData = null; // เก็บข้อมูลครูที่กำลังแก้ไข
+
+    // --- Profile Login ---
+    if (profileLoginForm) {
+        profileLoginForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const phone = document.getElementById('profileLoginPhone').value;
+            const password = document.getElementById('profileLoginPassword').value;
+
+            if (!phone || !password) {
+                showSweetAlert('warning', 'ข้อมูลไม่ครบถ้วน', 'กรุณากรอกหมายเลขโทรศัพท์และรหัสครูผู้สอน');
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const formData = new FormData();
+                formData.append('action', 'loginProfileEdit');
+                formData.append('phoneNumber', phone);
+                formData.append('teacherIdPassword', password); // รหัสครูคือรหัสผ่าน
+
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (result.status === 'success' && result.teacher) {
+                    currentEditingTeacherData = result.teacher;
+                    populateEditProfileForm(result.teacher);
+                    var loginModal = bootstrap.Modal.getInstance(document.getElementById('loginProfileModal'));
+                    loginModal.hide();
+                    var editModal = new bootstrap.Modal(document.getElementById('editProfileDataModal'));
+                    editModal.show();
+                } else {
+                    showSweetAlert('error', 'เข้าสู่ระบบไม่สำเร็จ', result.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+					//$(".modal-body input").val("");
+                }
+            } catch (error) {
+                console.error('Profile Login Error:', error);
+                showSweetAlert('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            } finally {
+                showLoading(false);
+            }
+					switchPage('homePage'); //ย้อนกลับไปหน้า dashboard
+        });
+
+    }
+
+    // --- Forgot Password ---
+    if (forgotPasswordForm) {
+	
+	const emailValue = document.getElementById('forgotPasswordEmail').value;
+	const formData = new FormData();
+	formData.append('action', 'forgotPassword'); // ตรวจสอบว่า action ถูกต้อง
+	formData.append('email', emailValue);      // ตรวจสอบว่า email ถูก append และ emailValue มีค่า
+
+	console.log("Client-side FormData for forgot password:", Object.fromEntries(formData)); // Log FormData ที่จะส่ง
+	fetch(SCRIPT_URL, { method: 'POST', body: formData })	
+	
+    forgotPasswordForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const email = document.getElementById('forgotPasswordEmail').value;
+        if (!email) {
+            showSweetAlert('warning', 'ข้อมูลไม่ครบถ้วน', 'กรุณากรอกอีเมล');
+            return;
+        }
+        showLoading(true);
+        try {
+            const formData = new FormData();
+            formData.append('action', 'forgotPassword'); // <--- ตรวจสอบว่า action ถูกต้อง
+            formData.append('email', email);             // <--- ตรวจสอบว่า email ถูกส่งไป
+
+            console.log("Sending forgot password request for email:", email); // <--- เพิ่ม log เพื่อดูว่ามีการเรียกส่วนนี้หรือไม่
+
+            const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+
+            console.log("Forgot password response from server:", result); // <--- เพิ่ม log เพื่อดูผลลัพธ์จาก server
+
+            if (result.status === 'success') {
+                showSweetAlert('success', 'ส่งคำขอสำเร็จ', result.message || 'ระบบได้ส่งข้อมูลไปยังอีเมลของคุณแล้ว (หากอีเมลถูกต้องและมีในระบบ)');
+                var forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                if (forgotModal) forgotModal.hide(); // ตรวจสอบว่า modal มีจริงก่อน hide
+            } else {
+                showSweetAlert('error', 'ส่งคำขอไม่สำเร็จ', result.message || 'ไม่พบอีเมลในระบบ หรือเกิดข้อผิดพลาด');
+            }
+        } catch (error) {
+            console.error('Forgot Password Error (Client-side):', error);
+            showSweetAlert('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+        } finally {
+            showLoading(false);
+        }
+    });
+}
+
+    // --- Populate Edit Profile Form ---
+    function populateEditProfileForm(teacher) {
+        if (!teacher) return;
+        document.getElementById('editTeacherId').value = teacher.id || '';
+        document.getElementById('editProfileFirstName').value = teacher.firstName || (teacher.name ? teacher.name.split(' ')[0] : '');
+        document.getElementById('editProfileLastName').value = teacher.lastName || (teacher.name ? teacher.name.split(' ').slice(1).join(' ') : '');
+        document.getElementById('editProfileDepartment').value = teacher.department || '';
+        document.getElementById('editProfileLevel').value = teacher.level || '';
+        document.getElementById('editProfilePhone').value = teacher.phoneNumber || document.getElementById('profileLoginPhone').value; // หรือดึงจาก teacher.id ถ้าใช้ id เป็น phone
+        document.getElementById('editProfileEmail').value = teacher.email || '';
+		document.getElementById('editProfilePassword').value = ""; // ไม่แสดงรหัสผ่านเดิม
+        //document.getElementById('editProfilePassword').value = teacher.password || document.getElementById('profileLoginPassword').value; // แสดงรหัสผ่านเดิม
+        editProfileImagePreview.src = teacher.photoUrl || 'https://placehold.co/150x150/adb5bd/ffffff?text=Profile';
+    }
+
+    // --- Profile Image Preview ---
+    if (editProfileImageInput) {
+        editProfileImageInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    editProfileImagePreview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // --- Edit Profile Submit ---
+    if (editProfileForm) {
+        editProfileForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            showLoading(true);
+            const formData = new FormData(editProfileForm);
+            formData.append('action', 'updateProfile');
+
+            const imageFile = editProfileImageInput.files[0];
+
+            if (imageFile) {
+                try {
+                    // แปลงไฟล์รูปภาพเป็น Base64 string
+                    const base64String = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result.split(',')[1]); // เอาเฉพาะส่วนข้อมูล base64
+                        reader.onerror = error => reject(error);
+                        reader.readAsDataURL(imageFile);
+                    });
+                    formData.append('profileImageBase64', base64String);
+                    formData.append('profileImageFileName', imageFile.name);
+                    // ไม่จำเป็นต้องส่ง profileImage ที่เป็น File object อีกต่อไป ถ้า Apps Script คาดหวัง base64
+                    formData.delete('profileImage');
+
+                    await processUpdateProfile(formData); // เรียกฟังก์ชันที่แยกออกมา
+
+                } catch (error) {
+                    console.error('Error reading file for profile update:', error);
+                    showSweetAlert('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์รูปภาพได้');
+                    showLoading(false);
+                }
+            } else {
+                // กรณีไม่ได้เลือกรูปใหม่ ให้ส่งค่าว่างไปเพื่อให้ Apps Script ไม่พยายามอัปเดตรูป
+                formData.append('profileImageBase64', '');
+                formData.append('profileImageFileName', '');
+                if (formData.has('profileImage')) { // ตรวจสอบและลบถ้ามีอยู่
+                    formData.delete('profileImage');
+                }
+                await processUpdateProfile(formData); // เรียกฟังก์ชันที่แยกออกมา
+            }
+        });
+    }
+
+    // แยกส่วนการ fetch ออกมาเป็นฟังก์ชันใหม่
+    async function processUpdateProfile(formData) {
+        try {
+            const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                showSweetAlert('success', 'บันทึกข้อมูลสำเร็จ', result.message || 'ข้อมูลส่วนตัวของคุณได้รับการอัปเดตแล้ว');
+                var editModal = bootstrap.Modal.getInstance(document.getElementById('editProfileDataModal'));
+                if (editModal) editModal.hide();
+
+                // เคลียร์ค่า input file และ preview
+                if (editProfileImageInput) editProfileImageInput.value = ''; // เคลียร์ไฟล์ที่เลือก
+                if (editProfileImagePreview) editProfileImagePreview.src = 'https://placehold.co/150x150/adb5bd/ffffff?text=Profile'; // รีเซ็ตรูป preview
+
+                const editedTeacherId = formData.get('teacherId');
+
+                // อัปเดตข้อมูลหน้า Check-in (ถ้ากำลังแสดงข้อมูลครูคนนี้)
+                if (teacherDataCache && teacherDataCache.id === editedTeacherId) {
+                    if (checkinPage.classList.contains('active') && teacherIdInput.value === editedTeacherId) {
+                        await fetchTeacherData(editedTeacherId); // จะอัปเดต teacherDataCache และ UI ที่เกี่ยวข้อง
+                    } else {
+                        teacherDataCache = null; // ทำให้โหลดใหม่ครั้งถัดไป
+                    }
+                }
+
+                // หากหน้า Dashboard เปิดอยู่ ให้โหลดข้อมูล Dashboard ใหม่
+                if (dashboardPage.classList.contains('active')) {
+                    await loadDashboardData();
+                }
+
+                // หากหน้า Search Statistics เปิดอยู่และแสดงข้อมูลครูคนนี้ ให้ค้นหาใหม่
+                if (searchPage.classList.contains('active') && searchTeacherIdInput.value === editedTeacherId) {
+                    await handleSearchStats();
+                }
+
+            } else {
+                showSweetAlert('error', 'บันทึกข้อมูลไม่สำเร็จ', result.message || 'เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
+            }
+        } catch (error) {
+            console.error('Update Profile Error:', error);
+            showSweetAlert('error', 'เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ หรือบันทึกข้อมูลได้');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // ลบ event listener ของปุ่มปิด modal แก้ไขข้อมูลเดิม ถ้ามี แล้วใส่ใหม่เพื่อให้เคลียร์ฟอร์ม
+    const closeEditProfileModalBtn = document.getElementById('closeEditProfileModal');
+    if(closeEditProfileModalBtn){
+        closeEditProfileModalBtn.addEventListener('click', function() {
+            editProfileForm.reset();
+            editProfileImagePreview.src = 'https://placehold.co/150x150/adb5bd/ffffff?text=Profile';
+            currentEditingTeacherData = null;
+        });
+    }
+
+
+
+
+
+
+
+        // --- DOM Elements ---
+        const mainNavButtons = document.querySelectorAll('.main-nav .btn');
+        const pageSections = document.querySelectorAll('.page-section');
+        const pageLoadingOverlay = document.getElementById('pageLoadingOverlay');
+
+        // Page Specific Elements
+        const homePage = document.getElementById('homePage');
+        const dashboardPage = document.getElementById('dashboardPage');
+        const checkinPage = document.getElementById('checkinPage');
+        const searchPage = document.getElementById('searchPage');
+
+        // Home Page Clock & Stats
+         const clockElementHome = document.getElementById('clock-home');
+         const homeLoggedTodayEl = document.getElementById('homeLoggedToday');
+         const homeGateDutyTodayEl = document.getElementById('homeGateDutyToday');
+         const homeBuildingDutyTodayEl = document.getElementById('homeBuildingDutyToday');
+
+        // Dashboard Elements
+        const loggedTodayCountEl = document.getElementById('loggedTodayCount');
+        const gateDutyCountEl = document.getElementById('gateDutyCount');
+        const buildingDutyCountEl = document.getElementById('buildingDutyCount');
+		const levelDutyCountEl = document.getElementById('levelDutyCount');
+		const pointCommitteeDutyCountEl = document.getElementById('pointCommitteeDutyCount');
+		const leaveOrTripCountEl = document.getElementById('leaveOrTripCount'); // <<<<<<<<<<<<<<<< เพิ่มบรรทัดนี้
+
+        const dashboardDateFilterEl = document.getElementById('dashboardDateFilter');
+        const dashboardLevelFilterEl = document.getElementById('dashboardLevelFilter');
+        const dashboardDutyFilterEl = document.getElementById('dashboardDutyFilter');
+        const refreshDashboardBtn = document.getElementById('refreshDashboardBtn');
+        const dashboardTableEl = $('#dashboardTable');
+        let dashboardDataTable = null;
+        const dashboardTableDateEl = document.getElementById('dashboardTableDate');
+
+        // Check-in Elements
+        const MyClockDisplay = document.getElementById('MyClockDisplay'); // For check-in page clock
+        const checkinForm = document.getElementById('checkinForm');
+        const teacherIdInput = document.getElementById('teacherId');
+        const teacherLookupStatus = document.getElementById('teacherLookupStatus');
+        const teacherInfoDiv = document.getElementById('teacherInfo');
+        const dutyStatusSection = document.getElementById('dutyStatusSection');
+        const dutyTypeSection = document.getElementById('dutyTypeSection');
+        const remarksSection = document.getElementById('remarksSection');
+        const locationSection = document.getElementById('locationSection');
+        const signatureSection = document.getElementById('signatureSection');
+        const photoSection = document.getElementById('photoSection');
+        const submitButtonSection = document.getElementById('submitButtonSection');
+        const dutySubSectionsLoading = document.getElementById('dutySubSectionsLoading');
+        const teacherPhoto = document.getElementById('teacherPhoto');
+        const teacherNameSpan = document.getElementById('teacherName');
+        const teacherDepartmentSpan = document.getElementById('teacherDepartment');
+        const teacherPositionSpan = document.getElementById('teacherPosition');
+        const hiddenTeacherName = document.getElementById('hiddenTeacherName');
+        const hiddenTeacherDepartment = document.getElementById('hiddenTeacherDepartment');
+        const dutyStatusRadios = document.querySelectorAll('input[name="dutyStatus"]');
+        const dutyTypeRadios = document.querySelectorAll('input[name="dutyType"]');
+        const remarksInput = document.getElementById('remarks');
+        const dutyStatusErrorDiv = document.getElementById('dutyStatusError');
+        const dutyTypeErrorDiv = document.getElementById('dutyTypeError');
+        const remarksErrorDiv = document.getElementById('remarksError');
+        const locationInfoDiv = document.getElementById('locationInfo');
+        const getLocationBtn = document.getElementById('getLocationBtn');
+        const latitudeInput = document.getElementById('latitude');
+        const longitudeInput = document.getElementById('longitude');
+        const locationErrorDiv = document.getElementById('locationError');
+        const signatureCanvas = document.getElementById('signatureCanvas');
+        const resetSignatureBtn = document.getElementById('resetSignatureBtn');
+        const signatureDataInput = document.getElementById('signatureData');
+        const signatureErrorDiv = document.getElementById('signatureError');
+        const videoFeed = document.getElementById('videoFeed');
+        const photoCanvas = document.getElementById('photoCanvas');
+        const capturedPhotoPreview = document.getElementById('capturedPhotoPreview');
+        const photoDataInput = document.getElementById('photoData');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+        const resetPhotoBtn = document.getElementById('resetPhotoBtn');
+        const cameraErrorDiv = document.getElementById('cameraError');
+        const photoErrorDiv = document.getElementById('photoError');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Search Statistics Elements
+        const searchTeacherIdInput = document.getElementById('searchTeacherId');
+        const searchStatsBtn = document.getElementById('searchStatsBtn');
+        const searchResultArea = document.getElementById('searchResultArea');
+        const statsTotalDaysEl = document.getElementById('statsTotalDays');
+        const statsPresentDaysEl = document.getElementById('statsPresentDays');
+        const statsLeaveDaysEl = document.getElementById('statsLeaveDays');
+        const statsTripDaysEl = document.getElementById('statsTripDays');
+        const statsTeacherInfoDiv = document.getElementById('statsTeacherInfo');
+        const statsTeacherPhoto = document.getElementById('statsTeacherPhoto');
+        const statsTeacherName = document.getElementById('statsTeacherName');
+        const statsTeacherDepartment = document.getElementById('statsTeacherDepartment');
+        const statsTeacherLevel = document.getElementById('statsTeacherLevel');
+        const statsDateFilterEl = document.getElementById('statsDateFilter');
+        const statsDutyFilterEl = document.getElementById('statsDutyFilter');
+        const resetStatsFilterBtn = document.getElementById('resetStatsFilterBtn');
+        const statsTableEl = $('#statsTable');
+        let statsDataTable = null;
+        const searchMessage = document.getElementById('searchMessage');
+
+        // --- State Variables ---
+        let signaturePad; let stream = null; let teacherDataCache = null;
+        let locationWatcher = null; let isSubmitting = false;
+        //let checkinAllowed = false; // Replaced by more specific logic
+        //let currentCheckinWindow = null; // Replaced by more specific logic
+        let locationAcquired = false;
+        let dashboardDataCache = null;
+        let statsDataCache = null;
+
+        // --- Constants ---
+        const PLACEHOLDER_IMG = 'https://placehold.co/100x100/adb5bd/ffffff?text=?';
+        const DEFAULT_PROFILE_IMG = 'https://placehold.co/40x40/adb5bd/ffffff?text=?';
+        const CHECKIN_PHOTO_PLACEHOLDER = 'https://placehold.co/40x40/e9ecef/6c757d?text=N/A';
+        const PHOTO_PREVIEW_PLACEHOLDER = 'https://placehold.co/300x200/e9ecef/6c757d?text=%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B8%95%E0%B8%B1%E0%B8%A7%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87';
+
+        // New/Updated specific time constants based on your request
+        const GATE_DUTY_MORNING_START = "07:00";
+        const GATE_DUTY_MORNING_END = "07:20";
+        const GATE_DUTY_AFTERNOON_START = "15:50";
+        const GATE_DUTY_AFTERNOON_END = "17:10";
+
+        const BUILDING_CHECK_MORNING_START = "07:00";
+        const BUILDING_CHECK_MORNING_END = "07:50";
+        const BUILDING_CHECK_AFTERNOON_START = "15:20";
+        const BUILDING_CHECK_AFTERNOON_END = "17:30";
+
+        const LEVEL_DUTY_MORNING_START = "07:40";
+        const LEVEL_DUTY_MORNING_END = "08:00";
+
+        const POINT_COMMITTEE_DUTY_MORNING_START = "07:00";
+        const POINT_COMMITTEE_DUTY_MORNING_END = "08:10";
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!SCRIPT_URL || SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') || SCRIPT_URL.length < 60) {
+                 showSweetAlert('error','Config Error', 'กรุณาตั้งค่า SCRIPT_URL ในโค้ด HTML ให้ถูกต้องด้วย URL ที่ได้จากการ Deploy Apps Script', false);
+                 document.querySelectorAll('button, input, select, textarea').forEach(el => el.disabled = true);
+                 return;
+            }
+
+            moment.locale('th');
+            initializeNavigation();
+            // initializeClock(); // showTime() function handles the checkin clock, home clock updates in updateClockAndButtonState
+            initializeSignaturePad();
+            initializeDashboard();
+            initializeSearchStats();
+            initializeCheckinFormLogic();
+
+            setInterval(updateClockAndButtonState, 1000);
+            window.addEventListener('resize', resizeCanvas);
+            switchPage('homePage');
+            showTime(); // Start the check-in page clock if that's the mechanism
+        });
+
+        // --- Helper Functions ---
+
+        function showLoading(show) {
+            if (show) {
+                 pageLoadingOverlay.classList.add('active');
+            } else {
+                 setTimeout(() => pageLoadingOverlay.classList.remove('active'), 200);
+             }
+        }
+
+        function showSweetAlert(icon, title, html = '', timerOrDuration = true) {
+            const config = { icon: icon, title: title, html: html, confirmButtonText: 'ปิด' };
+            if (typeof timerOrDuration === 'boolean' && timerOrDuration) { // Original boolean logic for auto-timer
+                config.timer = icon === 'success' ? 2500 : 4000;
+                config.timerProgressBar = true;
+            } else if (typeof timerOrDuration === 'number') { // Allow specific duration
+                config.timer = timerOrDuration;
+                config.timerProgressBar = true;
+            }
+            // If timerOrDuration is false, no timer is set.
+            Swal.fire(config);
+        }
+
+
+        function showSuccessSweetAlert(checkinTime, teacherName, photoUrl) {
+             let imageHtml = '';
+             if (photoUrl && photoUrl !== CHECKIN_PHOTO_PLACEHOLDER) { // CHECKIN_PHOTO_PLACEHOLDER might not be relevant here if photoDataUrl is used
+                 imageHtml = `<img src="${photoUrl}" alt="Check-in Photo" style="max-width:150px; max-height:150px; margin-top:10px; border-radius:5px; border: 1px solid #ddd;">`;
+             }
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกสำเร็จ!',
+                html: `<p class="mb-1"><strong>เวลา:</strong> ${checkinTime}</p>
+                       <p class="mb-2"><strong>ผู้บันทึก:</strong> ${teacherName}</p>
+                       ${imageHtml}`,
+                confirmButtonText: 'ปิด',
+                timer: 3500,
+                timerProgressBar: true
+            });
+        }
+
+        function formatThaiDateTimeCustom(dateInput) {
+            try {
+                const date = moment(dateInput);
+                if (!date.isValid()) { return 'Invalid Date'; }
+                const thaiYear = date.year() + 543;
+                 return date.format('DD/MMM/') + thaiYear + date.format(', HH:mm:ss น.');
+             } catch (error) {
+                console.error("Error formatting custom date:", dateInput, error);
+                return 'Invalid Date';
+            }
+        }
+
+         function formatThaiDate(dateInput) {
+             try {
+                 const date = moment(dateInput);
+                 if (!date.isValid()) { return 'Invalid Date'; }
+                 const thaiYear = date.year() + 543;
+                 return date.format('dddd D MMMM ') + thaiYear;
+             } catch (error) {
+                 console.error("Error formatting date (short):", dateInput, error);
+                 return 'Invalid Date';
+             }
+         }
+
+        // --- Navigation Logic ---
+        function initializeNavigation() {
+            mainNavButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetPageId = button.getAttribute('data-target');
+                    switchPage(targetPageId);
+                });
+            });
+        }
+
+        function switchPage(targetPageId) {
+            showLoading(true);
+
+            pageSections.forEach(section => section.classList.remove('active'));
+            mainNavButtons.forEach(btn => btn.classList.remove('active'));
+
+            const targetSection = document.getElementById(targetPageId);
+            const targetButton = document.querySelector(`.main-nav .btn[data-target="${targetPageId}"]`);
+
+            if (targetSection) {
+                targetSection.classList.add('active');
+                console.log(`Switched to page: ${targetPageId}`);
+
+                if (targetPageId === 'homePage') {
+                     loadHomepageStats();
+                } else if (targetPageId === 'dashboardPage') {
+                    loadDashboardData();
+                } else if (targetPageId === 'checkinPage') {
+                     resizeCanvas();
+                }
+            }
+
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+            setTimeout(() => showLoading(false), 100);
+        }
+
+        // --- Homepage Stats Function ---
+        async function loadHomepageStats() {
+             if (!homePage.classList.contains('active') || SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) return;
+
+             homeLoggedTodayEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+             homeGateDutyTodayEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+             homeBuildingDutyTodayEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+             const todayDate = moment().format('YYYY-MM-DD');
+             const url = `${SCRIPT_URL}?action=getDashboardData&date=${todayDate}`;
+
+             try {
+                 const response = await fetch(url);
+                 if (!response.ok) throw new Error(`Server error (${response.status})`);
+                 const data = await response.json();
+
+                 if (data.status === 'success' && data.counts) {
+                     homeLoggedTodayEl.textContent = data.counts.loggedToday || 0;
+                     homeGateDutyTodayEl.textContent = data.counts.gateDutyLogged || 0;
+                     homeBuildingDutyTodayEl.textContent = data.counts.buildingDutyLogged || 0;
+                 } else {
+                      throw new Error(data.message || 'Failed to load homepage stats');
+                 }
+             } catch (error) {
+                 console.error('Error loading homepage stats:', error);
+                 homeLoggedTodayEl.textContent = 'Error';
+                 homeGateDutyTodayEl.textContent = 'Error';
+                 homeBuildingDutyTodayEl.textContent = 'Error';
+             }
+        }
+
+
+        // --- Dashboard Functions ---
+        function initializeDashboard() {
+             $(dashboardDateFilterEl).daterangepicker({
+                 singleDatePicker: true, showDropdowns: true, autoApply: true,
+                 locale: {
+                     format: 'YYYY-MM-DD', applyLabel: 'เลือก', cancelLabel: 'ยกเลิก',
+                     daysOfWeek: moment.weekdaysMin(), monthNames: moment.monthsShort(),
+                     firstDay: moment.localeData('th').firstDayOfWeek()
+                 },
+                 maxDate: moment()
+             }, function(start, end, label) {
+                 loadDashboardData();
+             });
+             $(dashboardDateFilterEl).data('daterangepicker').setStartDate(moment());
+
+            dashboardDataTable = dashboardTableEl.DataTable({
+                language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
+                columns: [
+                    {
+                        data: 'teacherPhotoUrl', orderable: false, searchable: false,
+                        render: function(data, type, row) {
+                            const imgSrc = data || DEFAULT_PROFILE_IMG;
+                            return `<img src="${imgSrc}" class="table-img dashboard-table-img" alt="รูปครู" onerror="this.onerror=null; this.src='${DEFAULT_PROFILE_IMG}';" data-img-src="${imgSrc}">`;
+                        }
+                    },
+                    { data: 'teacherName' },
+                    { data: 'level', defaultContent: 'N/A' },
+                    { data: 'dutyType' },
+                    {
+                        data: 'timestamp',
+                        render: function(data) { return formatThaiDateTimeCustom(data); }
+                    }
+                ],
+                order: [[4, 'desc']], responsive: true, pageLength: 10,
+                lengthMenu: [ [10, 25, 50, -1], [10, 25, 50, "ทั้งหมด"] ],
+                 dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                      '<"row dt-row"<"col-sm-12"tr>>' +
+                      '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                 drawCallback: function(settings) { addDashboardImageEventListeners(); }
+            });
+
+            dashboardDutyFilterEl.addEventListener('change', filterDashboardTable);
+            dashboardLevelFilterEl.addEventListener('change', filterDashboardTable);
+            refreshDashboardBtn.addEventListener('click', loadDashboardData);
+        }
+
+        async function loadDashboardData() {
+            if (!dashboardPage.classList.contains('active') || SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) return;
+            showLoading(true);
+            const selectedDate = $(dashboardDateFilterEl).data('daterangepicker').startDate.format('YYYY-MM-DD');
+            dashboardTableDateEl.textContent = `ข้อมูล ณ วัน${formatThaiDate(selectedDate)}`;
+
+            const url = `${SCRIPT_URL}?action=getDashboardData&date=${selectedDate}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                 const data = await response.json();
+                 if (data.status === 'success') {
+                     updateDashboardCards(data.counts);
+                     dashboardDataCache = data.recentLogs || [];
+                     populateLevelFilter(dashboardLevelFilterEl, dashboardDataCache);
+                     filterDashboardTable();
+                 } else {
+                     throw new Error(data.message || 'Failed to load dashboard data');
+                 }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showSweetAlert('error', 'เกิดข้อผิดพลาด', `โหลดข้อมูลไม่สำเร็จ:กรุณากดปุ่มรีเฟรช`, false);
+                if (dashboardDataTable) dashboardDataTable.clear().draw();
+                updateDashboardCards(null);
+                 dashboardDataCache = [];
+                 dashboardTableDateEl.textContent = 'ไม่สามารถโหลดข้อมูลได้';
+            } finally {
+                showLoading(false);
+            }
+        }
+
+function updateDashboardCards(counts) {
+    if (counts) {
+        if(loggedTodayCountEl) loggedTodayCountEl.textContent = `${counts.loggedToday || 0} / ${counts.totalTeachers || 0}`;
+        if(gateDutyCountEl) gateDutyCountEl.textContent = `${counts.gateDutyLogged || 0}`;
+        if(buildingDutyCountEl) buildingDutyCountEl.textContent = `${counts.buildingDutyLogged || 0}`;
+        if(levelDutyCountEl) levelDutyCountEl.textContent = `${counts.levelDutyLogged || 0}`;
+        if(pointCommitteeDutyCountEl) pointCommitteeDutyCountEl.textContent = `${counts.pointCommitteeDutyLogged || 0}`;
+        if(leaveOrTripCountEl) { // <<<<<<<<<<<<<<<< เพิ่มส่วนนี้
+            const totalLeaveOrTrip = (counts.leaveLogged || 0) + (counts.businessTripLogged || 0);
+            leaveOrTripCountEl.textContent = `${totalLeaveOrTrip}`;
+        }
+    } else {
+        if(loggedTodayCountEl) loggedTodayCountEl.textContent = '0 / 0';
+        if(gateDutyCountEl) gateDutyCountEl.textContent = '0';
+        if(buildingDutyCountEl) buildingDutyCountEl.textContent = '0';
+        if(levelDutyCountEl) levelDutyCountEl.textContent = '0';
+        if(pointCommitteeDutyCountEl) pointCommitteeDutyCountEl.textContent = '0';
+        if(leaveOrTripCountEl) leaveOrTripCountEl.textContent = '0'; // <<<<<<<<<<<<<<<< เพิ่มส่วนนี้
+    }
+}
+
+         function populateLevelFilter(selectElement, data) {
+             if (!selectElement || !data) return;
+             const existingLevels = new Set();
+             data.forEach(item => {
+                 if (item.level && item.level !== 'N/A') existingLevels.add(item.level);
+             });
+             $(selectElement).find('option:not([value="all"])').remove();
+             existingLevels.forEach(level => {
+                 $(selectElement).append($('<option>', { value: level, text: level }));
+             });
+         }
+
+         function filterDashboardTable() {
+            if (!dashboardDataTable || dashboardDataCache === null) return;
+            const selectedDuty = dashboardDutyFilterEl.value;
+            const selectedLevel = dashboardLevelFilterEl.value;
+            let filteredData = dashboardDataCache;
+            if (selectedLevel !== 'all') {
+                 filteredData = filteredData.filter(log => log.level === selectedLevel);
+            }
+            if (selectedDuty !== 'all') {
+                 filteredData = filteredData.filter(log => log.dutyType === selectedDuty);
+            }
+            dashboardDataTable.clear().rows.add(filteredData).draw();
+         }
+
+        function addDashboardImageEventListeners() {
+             $('#dashboardTable tbody').off('click', 'img.dashboard-table-img').on('click', 'img.dashboard-table-img', function() {
+                const src = $(this).data('img-src');
+                 if (src && src !== DEFAULT_PROFILE_IMG) {
+                    Swal.fire({ imageUrl: src, imageHeight: 400, imageAlt: 'รูปครู', confirmButtonText: 'ปิด' });
+                 }
+            });
+        }
+
+
+        // --- Check-in Form Functions ---
+        function initializeCheckinFormLogic() {
+             if (teacherIdInput) {
+                 teacherIdInput.addEventListener('input', handleTeacherIdInput);
+                 teacherIdInput.addEventListener('paste', (e) => { setTimeout(handleTeacherIdInput, 0); });
+             }
+             if (dutyStatusSection) dutyStatusSection.addEventListener('change', handleDutyStatusChange);
+             if(getLocationBtn) getLocationBtn.addEventListener('click', initializeGeolocation);
+             if(startCameraBtn) startCameraBtn.addEventListener('click', startCamera);
+             if(capturePhotoBtn) capturePhotoBtn.addEventListener('click', capturePhoto);
+             if(resetPhotoBtn) resetPhotoBtn.addEventListener('click', resetPhoto);
+             if (checkinForm) checkinForm.addEventListener('submit', handleCheckinFormSubmit);
+            addCompletionCheckListeners();
+            hideAllCheckinSections();
+        }
+
+        // Function to check if current time is within a given window
+        function isWithinWindow(currentTimeStr, startTimeStr, endTimeStr) {
+            return currentTimeStr >= startTimeStr && currentTimeStr <= endTimeStr;
+        }
+
+        // Helper function to get selected duty type value
+        function getSelectedDutyType() {
+            const selectedDutyRadio = document.querySelector('input[name="dutyType"]:checked');
+            return selectedDutyRadio ? selectedDutyRadio.value : null;
+        }
+
+        // New helper function for specific duty time validation
+        function isCheckinAllowedForSelectedDuty() {
+            const now = new Date();
+            const currentTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            const selectedDuty = getSelectedDutyType();
+            let currentGeneralWindow = null;
+
+            const currentStatus = document.querySelector('input[name="dutyStatus"]:checked')?.value;
+            if (currentStatus === 'ลา' || currentStatus === 'ไปราชการ') {
+                return { allowed: true, windowText: '', generalWindow: null }; // Always allowed for these statuses
+            }
+
+            if (currentStatus === 'มา' && !selectedDuty) {
+                 return { allowed: false, windowText: 'กรุณาเลือกการปฏิบัติหน้าที่', generalWindow: null };
+            }
+
+            switch (selectedDuty) {
+                case 'เวรยืนประตู':
+                    if (isWithinWindow(currentTimeStr, GATE_DUTY_MORNING_START, GATE_DUTY_MORNING_END)) {
+                        currentGeneralWindow = 'morning';
+                        return { allowed: true, windowText: `เวรยืนประตู (เช้า ${GATE_DUTY_MORNING_START}-${GATE_DUTY_MORNING_END})`, generalWindow: currentGeneralWindow };
+                    }
+                    if (isWithinWindow(currentTimeStr, GATE_DUTY_AFTERNOON_START, GATE_DUTY_AFTERNOON_END)) {
+                        currentGeneralWindow = 'afternoon';
+                        return { allowed: true, windowText: `เวรยืนประตู (บ่าย ${GATE_DUTY_AFTERNOON_START}-${GATE_DUTY_AFTERNOON_END})`, generalWindow: currentGeneralWindow };
+                    }
+                    return { allowed: false, windowText: `นอกเวลา เวรยืนประตู (เช้า ${GATE_DUTY_MORNING_START}-${GATE_DUTY_MORNING_END} หรือ บ่าย ${GATE_DUTY_AFTERNOON_START}-${GATE_DUTY_AFTERNOON_END})`, generalWindow: null };
+                case 'ตรวจอาคาร':
+                    if (isWithinWindow(currentTimeStr, BUILDING_CHECK_MORNING_START, BUILDING_CHECK_MORNING_END)) {
+                        currentGeneralWindow = 'morning';
+                        return { allowed: true, windowText: `ตรวจอาคาร (เช้า ${BUILDING_CHECK_MORNING_START}-${BUILDING_CHECK_MORNING_END})`, generalWindow: currentGeneralWindow };
+                    }
+                    if (isWithinWindow(currentTimeStr, BUILDING_CHECK_AFTERNOON_START, BUILDING_CHECK_AFTERNOON_END)) {
+                        currentGeneralWindow = 'afternoon';
+                        return { allowed: true, windowText: `ตรวจอาคาร (บ่าย ${BUILDING_CHECK_AFTERNOON_START}-${BUILDING_CHECK_AFTERNOON_END})`, generalWindow: currentGeneralWindow };
+                    }
+                    return { allowed: false, windowText: `นอกเวลา ตรวจอาคาร (เช้า ${BUILDING_CHECK_MORNING_START}-${BUILDING_CHECK_MORNING_END} หรือ บ่าย ${BUILDING_CHECK_AFTERNOON_START}-${BUILDING_CHECK_AFTERNOON_END})`, generalWindow: null };
+                case 'ระดับ':
+                    if (isWithinWindow(currentTimeStr, LEVEL_DUTY_MORNING_START, LEVEL_DUTY_MORNING_END)) {
+                        currentGeneralWindow = 'morning';
+                        return { allowed: true, windowText: `ระดับ (เช้า ${LEVEL_DUTY_MORNING_START}-${LEVEL_DUTY_MORNING_END})`, generalWindow: currentGeneralWindow };
+                    }
+                    return { allowed: false, windowText: `นอกเวลา ระดับ (เช้า ${LEVEL_DUTY_MORNING_START}-${LEVEL_DUTY_MORNING_END})`, generalWindow: null };
+                case 'กรรมการประจำจุด':
+                    if (isWithinWindow(currentTimeStr, POINT_COMMITTEE_DUTY_MORNING_START, POINT_COMMITTEE_DUTY_MORNING_END)) {
+                        currentGeneralWindow = 'morning';
+                        return { allowed: true, windowText: `กรรมการประจำจุด (เช้า ${POINT_COMMITTEE_DUTY_MORNING_START}-${POINT_COMMITTEE_DUTY_MORNING_END})`, generalWindow: currentGeneralWindow };
+                    }
+                    return { allowed: false, windowText: `นอกเวลา กรรมการประจำจุด (เช้า ${POINT_COMMITTEE_DUTY_MORNING_START}-${POINT_COMMITTEE_DUTY_MORNING_END})`, generalWindow: null };
+                default:
+                    return { allowed: false, windowText: 'กรุณาเลือกการปฏิบัติหน้าที่ให้ถูกต้อง', generalWindow: null };
+            }
+        }
+
+        function updateClockAndButtonState() {
+            const now = new Date();
+            const year = now.getFullYear() + 543;
+            const optsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const optsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            const thaiDate = now.toLocaleDateString('th-TH', optsDate).replace(String(now.getFullYear()), String(year));
+            const thaiTime = now.toLocaleTimeString('th-TH', optsTime);
+            const clockText = `<i class="fas fa-clock me-2"></i> ${thaiDate} เวลา ${thaiTime} น.`;
+
+            if(homePage.classList.contains('active') && clockElementHome) clockElementHome.innerHTML = clockText;
+            // MyClockDisplay is updated by showTime() function from original script
+
+            if (isSubmitting || !checkinPage.classList.contains('active')) return;
+            updateSubmitButtonDisplay(); // This will now use isCheckinAllowedForSelectedDuty
+        }
+
+
+        function handleTeacherIdInput() {
+             const currentVal = teacherIdInput.value.replace(/\D/g,'');
+             teacherIdInput.value = currentVal;
+             teacherLookupStatus.textContent = '';
+             teacherLookupStatus.classList.remove('text-danger', 'text-success');
+
+             if (currentVal.length === 4) {
+                 showLoadingAndFetchTeacher(currentVal);
+             } else if (currentVal.length > 0) {
+                  teacherLookupStatus.textContent = 'กรุณากรอกรหัส 4 ตัว';
+                  hideAllCheckinSections(false);
+             } else {
+                  hideAllCheckinSections(true);
+             }
+        }
+
+         function showLoadingAndFetchTeacher(teacherId) {
+            teacherLookupStatus.textContent = '';
+            Swal.fire({
+                title: 'กำลังค้นหาข้อมูลครู...', text: `รหัส: ${teacherId}`,
+                allowOutsideClick: false, allowEscapeKey: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            hideAllCheckinSections(false);
+            fetchTeacherData(teacherId);
+        }
+
+        async function fetchTeacherData(teacherId) {
+            if (!teacherId || SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) {
+                if (SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) {
+                     showSweetAlert('error', 'Config Error', 'SCRIPT_URL not set', false);
+                }
+                return;
+            }
+            teacherDataCache = null;
+
+            // This SweetAlert is already called by showLoadingAndFetchTeacher
+            // Swal.fire({
+            //     title: 'กำลังค้นหาข้อมูลครู...', text: `รหัส: ${teacherId}`,
+            //     allowOutsideClick: false, allowEscapeKey: false,
+            //     didOpen: () => { Swal.showLoading(); }
+            // });
+
+            try {
+                const lookupUrl = `${SCRIPT_URL}?action=getTeacherInfo&id=${encodeURIComponent(teacherId)}`;
+                const response = await fetch(lookupUrl);
+                if (!response.ok) throw new Error(`Server Connection Error (${response.status})`);
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+                 if (!data.found || !data.teacher) {
+                     throw new Error(data.message || 'ไม่พบข้อมูลครู กรุณาตรวจสอบรหัส หรือติดต่อ <a style="color:#0515f5;cursor:pointer" target="_blank" href="https://line.me/ti/p/3F7VGrqgUr">อ.ธนสาร สีรักษ์</a>');
+                 }
+
+                if (Swal.isLoading()) Swal.close();
+                 Swal.fire({
+                    icon: 'success', title: 'พบข้อมูล',
+                    html: `<strong>ชื่อ-สกุล:</strong> ${data.teacher.name || 'N/A'}`,
+                    timer: 2000, timerProgressBar: true, showConfirmButton: false
+                });
+
+                teacherDataCache = data.teacher;
+                teacherNameSpan.textContent = data.teacher.name || 'N/A';
+                teacherDepartmentSpan.textContent = data.teacher.department || 'N/A';
+                teacherPositionSpan.textContent = data.teacher.position || 'N/A';
+                teacherPhoto.src = data.teacher.photoUrl || PLACEHOLDER_IMG;
+                teacherPhoto.onerror = () => { teacherPhoto.src = PLACEHOLDER_IMG; };
+                hiddenTeacherName.value = data.teacher.name || '';
+                hiddenTeacherDepartment.value = data.teacher.department || '';
+                teacherLookupStatus.textContent = `พบข้อมูล: ${data.teacher.name || 'N/A'}`;
+                teacherLookupStatus.classList.remove('text-danger');
+                teacherLookupStatus.classList.add('text-success');
+                showBaseInfoAndDutyStatus();
+
+            } catch (error) {
+                 if (Swal.isLoading()) Swal.close();
+                 teacherLookupStatus.textContent = `ข้อผิดพลาด: ${error.message.substring(0, 100)}`; // Prevent overly long messages
+                 teacherLookupStatus.classList.add('text-danger');
+                 teacherLookupStatus.classList.remove('text-success');
+                 hideAllCheckinSections(false);
+                 teacherIdInput.focus();
+                 teacherDataCache = null;
+                 showSweetAlert('error', 'เกิดข้อผิดพลาด / ไม่พบข้อมูล', `รายละเอียด: ${error.message}`, false);
+             } finally {
+                 if (Swal.isLoading()) Swal.close();
+             }
+        }
+
+        function showBaseInfoAndDutyStatus() {
+             teacherInfoDiv.style.display = 'block';
+             dutyStatusSection.style.display = 'block';
+             dutyStatusRadios.forEach(radio => radio.checked = false);
+             hideDutySubSections();
+             checkFormCompletion();
+        }
+
+        function hideAllCheckinSections(clearTeacherId = true) {
+            teacherInfoDiv.style.display = 'none';
+            dutyStatusSection.style.display = 'none';
+            hideDutySubSections();
+
+            if (teacherDataCache) teacherDataCache = null;
+            hiddenTeacherName.value = ''; hiddenTeacherDepartment.value = '';
+            locationAcquired = false;
+
+            if (clearTeacherId) {
+                teacherIdInput.value = '';
+                teacherLookupStatus.textContent = '';
+                teacherLookupStatus.classList.remove('text-danger', 'text-success');
+            }
+
+             clearValidationErrors();
+             statusMessage.innerHTML = '';
+             stopCameraStream();
+             if (signaturePad) signaturePad.clear();
+             signatureDataInput.value = '';
+             photoDataInput.value = '';
+             capturedPhotoPreview.src = PHOTO_PREVIEW_PLACEHOLDER;
+             startCameraBtn.innerHTML = '<i class="fas fa-video me-1"></i> เปิดกล้อง';
+             startCameraBtn.disabled = false;
+             capturePhotoBtn.disabled = true;
+             resetPhotoBtn.disabled = true;
+             cameraErrorDiv.textContent = ''; photoErrorDiv.textContent = '';
+             latitudeInput.value = ''; longitudeInput.value = '';
+             locationInfoDiv.querySelector('span').textContent = '';
+             const mapLink = locationInfoDiv.querySelector('a.map-link'); if(mapLink) mapLink.remove();
+             checkFormCompletion();
+        }
+
+         function hideDutySubSections() {
+            dutyTypeSection.style.display = 'none';
+            remarksSection.style.display = 'none';
+            locationSection.style.display = 'none';
+            signatureSection.style.display = 'none';
+            photoSection.style.display = 'none';
+            submitButtonSection.style.display = 'none';
+            dutyTypeRadios.forEach(r => r.checked = false);
+            remarksInput.value = '';
+        }
+
+        // Inside your <script> tag in PCTeacherattendance v1.html
+
+async function handleDutyStatusChange(event) {
+    if (!event.target || event.target.name !== 'dutyStatus') return;
+
+    const selectedStatus = event.target.value;
+    console.log("Duty status changed to:", selectedStatus);
+
+    clearValidationErrors(['dutyStatusError']);
+    dutySubSectionsLoading.style.display = 'flex';
+    hideDutySubSections(); // Hide everything below first
+
+    // Reset fields that depend on status before showing new sections
+    dutyTypeRadios.forEach(r => { r.checked = false; r.required = false; });
+    remarksInput.value = ''; remarksInput.required = false;
+    locationAcquired = false; latitudeInput.value = ''; longitudeInput.value = ''; locationErrorDiv.textContent = '';
+    locationInfoDiv.querySelector('span').textContent = '';
+    const mapLinkOld = locationInfoDiv.querySelector('a.map-link'); if (mapLinkOld) mapLinkOld.remove();
+    if (signaturePad) signaturePad.clear(); signatureDataInput.value = ''; signatureErrorDiv.textContent = '';
+    photoDataInput.value = ''; photoErrorDiv.textContent = ''; capturedPhotoPreview.src = PHOTO_PREVIEW_PLACEHOLDER;
+    startCameraBtn.innerHTML = '<i class="fas fa-video me-1"></i> เปิดกล้อง'; capturePhotoBtn.disabled = true; resetPhotoBtn.disabled = true; cameraErrorDiv.textContent = '';
+    startCameraBtn.disabled = false;
+    stopCameraStream();
+
+    await new Promise(resolve => setTimeout(resolve, 50)); // Short delay for UI update
+
+    if (selectedStatus === 'มา') {
+        // NEW: Proactive Time Check when 'มา' is selected
+        const now = new Date();
+        const currentTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        let isCurrentlyInAnyAllowedWindow = false;
+        let specificDutyWindowMessage = "ไม่สามารถลงเวลาได้!!"; // Default message
+
+        // Check against all "มา" duty windows
+        if (isWithinWindow(currentTimeStr, GATE_DUTY_MORNING_START, GATE_DUTY_MORNING_END) ||
+            isWithinWindow(currentTimeStr, GATE_DUTY_AFTERNOON_START, GATE_DUTY_AFTERNOON_END) ||
+            isWithinWindow(currentTimeStr, BUILDING_CHECK_MORNING_START, BUILDING_CHECK_MORNING_END) ||
+            isWithinWindow(currentTimeStr, BUILDING_CHECK_AFTERNOON_START, BUILDING_CHECK_AFTERNOON_END) ||
+            isWithinWindow(currentTimeStr, LEVEL_DUTY_MORNING_START, LEVEL_DUTY_MORNING_END) ||
+            isWithinWindow(currentTimeStr, POINT_COMMITTEE_DUTY_MORNING_START, POINT_COMMITTEE_DUTY_MORNING_END)) {
+            isCurrentlyInAnyAllowedWindow = true;
+        }
+
+        if (!isCurrentlyInAnyAllowedWindow) {
+            // Construct a more detailed message if needed, or use a general one
+            //let detailedMessage = "เนื่องจากท่านลงเวลาเกินที่กำหนด<br><br><u>ช่วงเวลาที่กำหนด:</u><br>";
+            //detailedMessage += `- เวรยืนประตู: <span class="math-inline">\{GATE\_DUTY\_MORNING\_START\}\-</span>{GATE_DUTY_MORNING_END} หรือ <span class="math-inline">\{GATE\_DUTY\_AFTERNOON\_START\}\-</span>{GATE_DUTY_AFTERNOON_END}<br>`;
+            //detailedMessage += `- ตรวจอาคาร: <span class="math-inline">\{BUILDING\_CHECK\_MORNING\_START\}\-</span>{BUILDING_CHECK_MORNING_END} หรือ <span class="math-inline">\{BUILDING\_CHECK\_AFTERNOON\_START\}\-</span>{BUILDING_CHECK_AFTERNOON_END}<br>`;
+            //detailedMessage += `- ระดับ: <span class="math-inline">\{LEVEL\_DUTY\_MORNING\_START\}\-</span>{LEVEL_DUTY_MORNING_END}<br>`;
+            //detailedMessage += `- กรรมการประจำจุด: <span class="math-inline">\{POINT\_COMMITTEE\_DUTY\_MORNING\_START\}\-</span>{POINT_COMMITTEE_DUTY_MORNING_END}`;
+
+            //showSweetAlert('warning', 'ขออภัย ไม่สามารถลงเวลาได้', detailedMessage, false); // false for no auto-timer
+            // Optionally, you might want to uncheck the 'มา' radio button or guide the user.
+            // For now, it just shows the alert. The form sections for 'มา' will still show.
+			//Swal.fire({
+				  //title: "ไม่สามารถลงเวลาได้ !!",
+				  //text: "เนื่องจากเลยช่วงเวลาที่กำหนด !",
+				  //icon: "error",
+				  //showCancelButton: false,
+				 // confirmButtonColor: "#3085d6",
+				 // cancelButtonColor: "#d33",
+				 // confirmButtonText: "ตกลง, ฉันเข้าใจ!",
+				  // position: 'top',
+				  //allowOutsideClick : false
+				//}).then((result) => {
+				  //if (result.isConfirmed) {
+					///switchPage('homePage');
+				 // }
+				//});
+				
+				Swal.fire({
+				  title: "ไม่สามารถลงเวลาได้ !!",
+				  text: "เนื่องจากเลยช่วงเวลาที่กำหนด !",
+				  icon: "error",
+				  showDenyButton: true,
+				  showCancelButton: false,
+				  confirmButtonText: "ตกลง, ฉันเข้าใจ!",
+				  denyButtonText: `ไปหน้าเช็คชื่อนักเรียน`
+				 
+				}).then((result) => {
+				  /* Read more about isConfirmed, isDenied below */
+				  if (result.isConfirmed) {
+					switchPage('homePage');
+				  } else if (result.isDenied) {
+				   window.location.href = `https://sites.google.com/view/time-pcschool/Time-record`
+				   //window.open("https://liff.line.me/1657056127-3k2w6bg7");
+					
+				  }
+				});
+				
+				
+				
+			}
+
+		
+        // END NEW: Proactive Time Check
+
+        dutyTypeSection.style.display = 'block';
+        locationSection.style.display = 'block';
+        signatureSection.style.display = 'block';
+        photoSection.style.display = 'block';
+        submitButtonSection.style.display = 'grid'; // Use grid for d-grid
+        dutyTypeRadios.forEach(r => r.required = true);
+        remarksInput.required = false;
+        initializeGeolocation(); // Start getting location
+        resizeCanvas(); // Ensure signature pad is sized correctly
+    } else if (selectedStatus === 'ลา' || selectedStatus === 'ไปราชการ') {
+        remarksSection.style.display = 'block';
+        submitButtonSection.style.display = 'grid'; // Use grid for d-grid
+        remarksInput.required = true;
+        dutyTypeRadios.forEach(r => r.required = false);
+    } else {
+        // Should not happen if a radio is selected, but hide submit just in case
+        submitButtonSection.style.display = 'none';
+    }
+
+    dutySubSectionsLoading.style.display = 'none'; // Hide spinner
+    checkFormCompletion(); // Update submit button state after showing/hiding sections
+}
+
+         function initializeGeolocation() {
+             if (!locationSection || locationSection.style.display === 'none') return;
+             locationInfoDiv.querySelector('span').innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> กำลังค้นหา...';
+             locationErrorDiv.textContent = ''; latitudeInput.value = ''; longitudeInput.value = '';
+             locationAcquired = false;
+             clearValidationErrors(['locationError']);
+             checkFormCompletion();
+
+             if ('geolocation' in navigator) {
+                 if (locationWatcher) navigator.geolocation.clearWatch(locationWatcher);
+                 navigator.geolocation.getCurrentPosition(
+                     (pos) => {
+                         latitudeInput.value = pos.coords.latitude.toFixed(8);
+                         longitudeInput.value = pos.coords.longitude.toFixed(8);
+                         locationAcquired = true;
+                         locationInfoDiv.querySelector('span').innerHTML = `<i class="fas fa-check-circle text-success me-1"></i> ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+                          const mapLinkUrl = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`;
+                          let link = locationInfoDiv.querySelector('a.map-link');
+                          if (!link) {
+                              link = document.createElement('a');
+                              link.target = '_blank'; link.rel = 'noopener noreferrer';
+                              link.classList.add('ms-1', 'small', 'map-link', 'text-decoration-none');
+                              link.innerHTML = '<i class="fas fa-external-link-alt"></i>';
+                              link.title = 'เปิดในแผนที่';
+                              locationInfoDiv.appendChild(link);
+                          }
+                          link.href = mapLinkUrl;
+                         checkFormCompletion();
+                     },
+                     (err) => {
+                         handleLocationError(err); locationAcquired = false; checkFormCompletion();
+                     },
+                     /*{ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 } //ดึงตำแหน่งปัจจุบัน*/
+					 { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }  //ดึงตำแหน่งจากแหล่งอื่น (เช่น Wi-Fi, IP Address) 
+                 );
+             } else {
+                 handleLocationError({ code: -1, message: 'Geolocation ไม่รองรับในเบราว์เซอร์นี้' });
+                 locationAcquired = false; checkFormCompletion();
+             }
+         }
+
+         function handleLocationError(error) {
+             console.error('Geolocation Error:', error);
+             let msg = 'เกิดข้อผิดพลาดในการระบุตำแหน่ง: ';
+             switch (error.code) {
+                 case error.PERMISSION_DENIED: msg += 'ผู้ใช้ปฏิเสธการเข้าถึงตำแหน่ง'; break;
+                 case error.POSITION_UNAVAILABLE: msg += 'ไม่สามารถระบุตำแหน่งได้'; break;
+                 case error.TIMEOUT: msg += 'หมดเวลาในการค้นหาตำแหน่ง'; break;
+                 case -1: msg = error.message; break;
+                 default: msg += 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ'; break;
+             }
+             locationInfoDiv.querySelector('span').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> ข้อผิดพลาดตำแหน่ง';
+             locationErrorDiv.textContent = msg;
+             latitudeInput.value = ''; longitudeInput.value = '';
+             const mapLink = locationInfoDiv.querySelector('a.map-link'); if(mapLink) mapLink.remove();
+         }
+
+         function initializeSignaturePad() {
+              setTimeout(() => {
+                 if (!signatureCanvas) { console.error("Signature canvas element not found."); return; }
+                 resizeCanvas();
+                 signaturePad = new SignaturePad(signatureCanvas, { backgroundColor: 'rgb(255, 255, 255)', penColor: 'rgb(0, 0, 0)' });
+                 if (resetSignatureBtn) {
+                     resetSignatureBtn.addEventListener('click', () => {
+                         if(signaturePad) signaturePad.clear();
+                         signatureDataInput.value = '';
+                         clearValidationErrors(['signatureError']); checkFormCompletion();
+                     });
+                 }
+                 signatureCanvas.addEventListener('pointerdown', () => {
+                      if(signaturePad && !signaturePad.isEmpty()) clearValidationErrors(['signatureError']);
+                 });
+                 signaturePad.addEventListener("endStroke", () => {
+                     if (signaturePad) {
+                         signatureDataInput.value = signaturePad.isEmpty() ? '' : signaturePad.toDataURL('image/jpeg', 0.8).split(',')[1];
+                         checkFormCompletion();
+                         if(!signaturePad.isEmpty()) clearValidationErrors(['signatureError']);
+                     }
+                 });
+              }, 100);
+         }
+
+         function resizeCanvas() {
+            if (!signatureCanvas || !signatureCanvas.offsetParent) return;
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const container = signatureCanvas.parentElement;
+             if (!container || container.offsetWidth === 0 || container.offsetHeight === 0) return;
+            signatureCanvas.width = container.offsetWidth * ratio;
+            signatureCanvas.height = container.offsetHeight * ratio;
+            signatureCanvas.style.width = `${container.offsetWidth}px`;
+            signatureCanvas.style.height = `${container.offsetHeight}px`;
+            const ctx = signatureCanvas.getContext("2d");
+             if (ctx) {
+                ctx.scale(ratio, ratio);
+                 if (signaturePad) {
+                    const data = signaturePad.toData(); signaturePad.clear(); signaturePad.fromData(data);
+                 }
+             }
+        }
+
+        function stopCameraStream() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop()); stream = null;
+                if (videoFeed) {
+                    videoFeed.srcObject = null; videoFeed.style.display = 'none'; videoFeed.load();
+                 }
+            }
+        }
+
+        async function startCamera() {
+            if (!photoSection || photoSection.style.display === 'none') return;
+            cameraErrorDiv.textContent = ''; photoErrorDiv.textContent = '';
+            clearValidationErrors(['cameraError', 'photoError']);
+            stopCameraStream();
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            startCameraBtn.disabled = true;
+            startCameraBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> กำลังเปิด...';
+
+            try {
+                 const constraints = { video: { facingMode: 'user' }, audio: false };
+                 stream = await navigator.mediaDevices.getUserMedia(constraints);
+                 if (videoFeed) {
+                     videoFeed.srcObject = stream; videoFeed.style.display = 'block'; await videoFeed.play();
+                     capturePhotoBtn.disabled = false; resetPhotoBtn.disabled = true;
+                     startCameraBtn.innerHTML = '<i class="fas fa-sync me-1"></i> รีสตาร์ทกล้อง'; checkFormCompletion();
+                 }
+                 if (capturedPhotoPreview) capturedPhotoPreview.src = PHOTO_PREVIEW_PLACEHOLDER;
+                 if (photoDataInput) photoDataInput.value = '';
+            } catch (err) {
+                console.error("Camera Access Error:", err);
+                let msg = `เกิดข้อผิดพลาด (${err.name})`;
+                if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") msg = "ไม่อนุญาตให้เข้าถึงกล้อง";
+                else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") msg = "ไม่พบกล้อง";
+                else if (err.name === "NotReadableError" || err.name === "TrackStartError") msg = "กล้องอาจถูกใช้งานอยู่ หรือมีปัญหา";
+                cameraErrorDiv.textContent = msg;
+                capturePhotoBtn.disabled = true; resetPhotoBtn.disabled = true;
+                startCameraBtn.innerHTML = '<i class="fas fa-video me-1"></i> เปิดกล้อง';
+                 if (videoFeed) videoFeed.style.display = 'none';
+                stopCameraStream(); checkFormCompletion();
+             } finally {
+                 startCameraBtn.disabled = false;
+             }
+         }
+
+         function capturePhoto() {
+             if (!stream || !stream.active || !videoFeed || videoFeed.readyState < videoFeed.HAVE_METADATA) {
+                 cameraErrorDiv.textContent = 'เปิดกล้อง หรือรอให้กล้องพร้อมก่อน'; return;
+              }
+             clearValidationErrors(['photoError']);
+             const videoWidth = videoFeed.videoWidth; const videoHeight = videoFeed.videoHeight;
+             if (!videoWidth || !videoHeight) { cameraErrorDiv.textContent = 'ข้อผิดพลาดขนาดวิดีโอ'; return; }
+
+             if (photoCanvas) {
+                 photoCanvas.width = videoWidth; photoCanvas.height = videoHeight;
+                 const ctx = photoCanvas.getContext('2d');
+                 if (stream.getVideoTracks()[0]?.getSettings()?.facingMode === 'user') {
+                      ctx.translate(videoWidth, 0); ctx.scale(-1, 1);
+                 }
+                 ctx.drawImage(videoFeed, 0, 0, videoWidth, videoHeight);
+                 const dataUrl = photoCanvas.toDataURL('image/jpeg', 0.8);
+                 if (capturedPhotoPreview) capturedPhotoPreview.src = dataUrl;
+                 if (photoDataInput) photoDataInput.value = dataUrl.split(',')[1];
+		// --- เพิ่มบรรทัดนี้เพื่อซ่อน videoFeed ---
+		 if (videoFeed) videoFeed.style.display = 'none';
+                 // -----------------------------------------
+             }
+             resetPhotoBtn.disabled = false; capturePhotoBtn.disabled = true;
+             checkFormCompletion(); clearValidationErrors(['photoError']);
+        }
+
+         function resetPhoto() {
+             clearValidationErrors(['photoError']);
+             if (photoDataInput) photoDataInput.value = '';
+ 	     if (videoFeed) videoFeed.style.display = 'block';
+             if (capturedPhotoPreview) capturedPhotoPreview.src = PHOTO_PREVIEW_PLACEHOLDER;
+             resetPhotoBtn.disabled = true;
+             if (stream && stream.active) capturePhotoBtn.disabled = false;
+             else capturePhotoBtn.disabled = true;
+             checkFormCompletion();
+        }
+
+        function addCompletionCheckListeners() {
+             dutyTypeRadios.forEach(r => r.addEventListener('change', checkFormCompletion));
+             remarksInput.addEventListener('input', checkFormCompletion);
+             dutyStatusRadios.forEach(r => r.addEventListener('change', checkFormCompletion));
+        }
+
+        function checkFormCompletion() {
+            const selectedStatusRadio = document.querySelector('input[name="dutyStatus"]:checked');
+            const selectedStatus = selectedStatusRadio ? selectedStatusRadio.value : null;
+            let isComplete = false;
+
+            if (!teacherDataCache || !selectedStatus) {
+                isComplete = false;
+            } else if (selectedStatus === 'มา') {
+                const dutyTypeSelected = document.querySelector('input[name="dutyType"]:checked');
+                const signatureDone = signaturePad && !signaturePad.isEmpty() && signatureDataInput.value;
+                const photoTaken = photoDataInput.value;
+                const locationDone = latitudeInput.value && longitudeInput.value && locationAcquired;
+                isComplete = !!(dutyTypeSelected && locationDone && signatureDone && photoTaken);
+            } else if (selectedStatus === 'ลา' || selectedStatus === 'ไปราชการ') {
+                isComplete = remarksInput.value.trim() !== '';
+            }
+            updateSubmitButtonDisplay(isComplete);
+            return isComplete;
+        }
+
+        function updateSubmitButtonDisplay(isFormComplete = checkFormCompletion()) {
+            const isSectionVisible = submitButtonSection && submitButtonSection.style.display !== 'none';
+
+            if (!isSectionVisible) {
+                submitBtn.disabled = true;
+                submitBtn.classList.replace('btn-primary', 'btn-secondary');
+                submitBtn.innerHTML = `<i class="fas fa-times-circle me-2"></i> กรอกข้อมูลให้ครบ`;
+                return;
+            }
+
+            const { allowed, windowText: timeWindowMessage, generalWindow } = isCheckinAllowedForSelectedDuty();
+            const currentStatus = document.querySelector('input[name="dutyStatus"]:checked')?.value;
+
+            if ((currentStatus === 'มา' && allowed && isFormComplete) || ((currentStatus === 'ลา' || currentStatus === 'ไปราชการ') && isFormComplete) ) {
+                submitBtn.disabled = false;
+                submitBtn.classList.replace('btn-secondary', 'btn-primary');
+                const dutyTypeText = getSelectedDutyType() || '';
+                const generalWindowText = generalWindow === 'morning' ? 'เช้า' : (generalWindow === 'afternoon' ? 'บ่าย' : '');
+                let submitButtonText = `<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูล`;
+                if (currentStatus === 'มา') {
+                     submitButtonText += ` ${dutyTypeText} ${generalWindowText ? '(รอบ' + generalWindowText + ')' : ''}`;
+                }
+                submitBtn.innerHTML = submitButtonText;
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.classList.replace('btn-primary', 'btn-secondary');
+                if (!isFormComplete) {
+                    submitBtn.innerHTML = `<i class="fas fa-times-circle me-2"></i> กรอกข้อมูลให้ครบ`;
+                } else { // Complete but outside window for 'มา' status
+                    submitBtn.innerHTML = `<i class="fas fa-clock me-2"></i> ${timeWindowMessage}`;
+                }
+            }
+        }
+
+
+         function validateForm() {
+             clearValidationErrors();
+             let isValid = true;
+             const selectedStatusRadio = document.querySelector('input[name="dutyStatus"]:checked');
+             const statusValue = selectedStatusRadio ? selectedStatusRadio.value : null;
+
+             if (!teacherDataCache) { showSweetAlert('warning', 'ข้อมูลไม่ครบ', 'กรุณากรอกรหัสครูให้ถูกต้อง'); isValid = false; teacherIdInput.focus(); }
+             else if (!statusValue) { dutyStatusErrorDiv.textContent = 'กรุณาเลือกสถานะการปฏิบัติหน้าที่'; isValid = false; dutyStatusSection.scrollIntoView({ behavior: 'smooth', block: 'center' });}
+             else if (statusValue === 'มา') {
+                 if (!document.querySelector('input[name="dutyType"]:checked')) { dutyTypeErrorDiv.textContent = 'กรุณาเลือกประเภทการปฏิบัติหน้าที่'; isValid = false; if(isValid) dutyTypeSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                  if (!latitudeInput.value || !longitudeInput.value || !locationAcquired) { locationErrorDiv.textContent = 'กรุณาระบุตำแหน่ง (กด <i class="fas fa-sync"></i> หากไม่ขึ้น)'; isValid = false; if(isValid) locationSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                  if (signaturePad.isEmpty() || !signatureDataInput.value) { signatureErrorDiv.textContent = 'กรุณาลงลายมือชื่อ'; isValid = false; if(isValid) signatureSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                  if (!photoDataInput.value) { photoErrorDiv.textContent = 'กรุณาถ่ายภาพยืนยัน'; isValid = false; if(isValid) photoSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+             } else if ((statusValue === 'ลา' || statusValue === 'ไปราชการ')) {
+                 if (!remarksInput.value.trim()) { remarksErrorDiv.textContent = 'กรุณากรอกหมายเหตุ (เหตุผล)'; isValid = false; if(isValid) remarksSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+             }
+
+             if (isValid) { // Point 3: SweetAlert if outside time range on submit
+                const selectedStatus = document.querySelector('input[name="dutyStatus"]:checked')?.value;
+                if (selectedStatus === 'มา') { // Time validation only for 'มา'
+                    const { allowed, windowText } = isCheckinAllowedForSelectedDuty();
+                    if (!allowed) {
+                        showSweetAlert('warning', 'นอกเวลาทำการ', windowText); // Show specific time window message
+                        isValid = false;
+                    }
+                }
+            }
+             return isValid;
+         }
+
+         function clearValidationErrors(exceptIds = []) {
+             const errorDivs = checkinForm.querySelectorAll('.form-text.text-danger, .invalid-feedback');
+             errorDivs.forEach(div => { if (!exceptIds.includes(div.id)) div.textContent = ''; });
+         }
+
+        async function handleCheckinFormSubmit(event) {
+            event.preventDefault();
+             if (isSubmitting) return;
+            if (!validateForm()) return; // ValidateForm now includes the time check SweetAlert
+             if (SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) { showSweetAlert('error', 'Config Error', 'SCRIPT_URL not set', false); return; }
+
+            Swal.fire({
+                title: 'ยืนยันการส่งข้อมูล?',
+                html: `ครูผู้สอน: ${teacherDataCache?.name || 'N/A'}<br>สถานะ: ${document.querySelector('input[name="dutyStatus"]:checked')?.value || 'N/A'}<br>การปฏิบัติหน้าที่: ${getSelectedDutyType() || (document.querySelector('input[name="dutyStatus"]:checked')?.value !== 'มา' ? 'N/A' : 'ไม่ระบุ')}`,
+                icon: 'question', showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#d33',
+                confirmButtonText: ' <i class="fas fa-check"></i> ใช่, ยืนยัน ', cancelButtonText: '<i class="fas fa-times"></i> ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    isSubmitting = true; statusMessage.innerHTML = ''; submitBtn.disabled = true;
+                    const formData = new FormData(checkinForm);
+
+                     if (formData.get('dutyStatus') === 'มา') {
+                         formData.delete('remarks');
+                     } else {
+                          formData.delete('dutyType'); formData.delete('latitude'); formData.delete('longitude');
+                          formData.delete('signatureData'); formData.delete('photoData');
+                     }
+                    formData.append('clientTimestamp', new Date().toISOString());
+
+                     let fetchSuccess = false; let successData = null; let errorMessage = 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ';
+
+                    try {
+                        const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                        const fetchResult = await response.json();
+                        if (fetchResult.status === 'success') {
+                             fetchSuccess = true;
+                             const now = new Date(); const thaiDateTime = formatThaiDateTimeCustom(now);
+                             const photoBase64 = formData.get('dutyStatus') === 'มา' ? formData.get('photoData') : null;
+                             const photoDataUrl = photoBase64 ? `data:image/jpeg;base64,${photoBase64}` : null;
+                             successData = { thaiDateTime, status: formData.get('dutyStatus'), photoDataUrl };
+                        } else {
+                             errorMessage = fetchResult.message || 'ส่งข้อมูลไม่สำเร็จ'; throw new Error(errorMessage);
+                         }
+                    } catch (error) {
+                        console.error('Submit Error:', error); errorMessage = error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+                    } finally {
+                        if (Swal.isVisible() && Swal.isLoading()) Swal.close();
+                        isSubmitting = false; submitBtn.disabled = false;
+
+                        if (fetchSuccess && successData) { // Point 5: Redirect to Dashboard
+                            Swal.fire({
+                                icon: 'success', title: 'บันทึกสำเร็จ!',
+                                html: `<p class="mb-1"><strong>เวลา:</strong> ${successData.thaiDateTime}</p>
+                                       <p class="mb-1"><strong>ผู้บันทึก:</strong> ${teacherDataCache?.name || 'N/A'}</p>
+                                       ${successData.photoDataUrl ? `<img src="${successData.photoDataUrl}" alt="Check-in Photo" style="max-width:150px; max-height:150px; margin-top:10px; border-radius:5px; border: 1px solid #ddd;">` : ''}
+                                       <p class="mt-2 mb-0"><small>กำลังนำทางไปยัง Dashboard...</small></p>`,
+                                confirmButtonText: 'ตกลง', timer: 3500, timerProgressBar: true,
+                                willClose: () => {
+                                    resetCheckinForm();
+                                    switchPage('dashboardPage');
+                                }
+                            });
+                        } else {
+                            showSweetAlert('error', 'ส่งข้อมูลไม่สำเร็จ', `ข้อผิดพลาด: ${errorMessage}`, false);
+                            teacherIdInput.value = '';
+                            hideAllCheckinSections(false);
+                            teacherLookupStatus.textContent = `ส่งข้อมูลไม่สำเร็จ กรุณาลองกรอกรหัสครูอีกครั้ง`;
+                            teacherLookupStatus.className = 'form-text mt-1 small text-danger';
+                            teacherIdInput.focus();
+                            checkFormCompletion();
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetCheckinForm() {
+             checkinForm.reset();
+             hideAllCheckinSections(true);
+             if (checkinPage.classList.contains('active')) {
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+             }
+             updateClockAndButtonState();
+        }
+
+        // --- Search Statistics Functions ---
+        function initializeSearchStats() {
+             $(statsDateFilterEl).daterangepicker({
+                 autoUpdateInput: false, showDropdowns: true,
+                 locale: {
+                     format: 'DD/MM/YYYY', separator: ' - ', applyLabel: 'เลือก', cancelLabel: 'ยกเลิก',
+                     fromLabel: 'จาก', toLabel: 'ถึง', daysOfWeek: moment.weekdaysMin(), monthNames: moment.months(),
+                     firstDay: moment.localeData('th').firstDayOfWeek()
+                 },
+                 ranges: {
+                    'วันนี้': [moment(), moment()], 'เมื่อวาน': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    '7 วันล่าสุด': [moment().subtract(6, 'days'), moment()], '30 วันล่าสุด': [moment().subtract(29, 'days'), moment()],
+                    'เดือนนี้': [moment().startOf('month'), moment().endOf('month')],
+                    'เดือนที่แล้ว': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                 }
+             });
+             $(statsDateFilterEl).on('apply.daterangepicker', function(ev, picker) {
+                 $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+                 filterStatsTable();
+             });
+             $(statsDateFilterEl).on('cancel.daterangepicker', function(ev, picker) {
+                 $(this).val(''); filterStatsTable();
+             });
+
+             statsDataTable = statsTableEl.DataTable({
+                 language: { url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/th.json" },
+                 columns: [
+                     {
+                         data: 'checkinPhotoUrl', orderable: false, searchable: false,
+                         render: function(data, type, row) {
+                             const imgSrc = data || CHECKIN_PHOTO_PLACEHOLDER;
+                             return `<img src="${imgSrc}" class="table-img stats-table-img" alt="รูปที่บันทึก" onerror="this.onerror=null; this.src='${CHECKIN_PHOTO_PLACEHOLDER}';" data-img-src="${imgSrc}">`;
+                         }
+                     },
+                     { data: 'level', defaultContent: 'N/A' },
+                     { data: 'dutyOrStatus' },
+                     { data: 'timestamp', render: function(data) { return formatThaiDateTimeCustom(data); } }
+                 ],
+                 order: [[3, 'desc']], responsive: true, pageLength: 10,
+                 lengthMenu: [ [10, 25, 50, -1], [10, 25, 50, "ทั้งหมด"] ],
+                  dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+                       '<"row dt-row"<"col-sm-12"tr>>' +
+                       '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+                  drawCallback: function(settings) { addStatsImageEventListeners(); }
+             });
+
+            if(searchStatsBtn) searchStatsBtn.addEventListener('click', handleSearchStats);
+            if(searchTeacherIdInput) searchTeacherIdInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearchStats(); });
+            statsDutyFilterEl.addEventListener('change', filterStatsTable);
+            resetStatsFilterBtn.addEventListener('click', resetStatsFilters);
+         }
+
+        async function handleSearchStats() {
+            const teacherId = searchTeacherIdInput.value.trim();
+            searchMessage.textContent = ''; searchResultArea.style.display = 'none';
+            statsDataCache = null; resetStatsFilters();
+
+            if (!teacherId || teacherId.length !== 4 || !/^\d+$/.test(teacherId)) {
+                searchMessage.textContent = 'กรุณากรอกรหัสครู 4 หลัก (ตัวเลข)'; searchMessage.className = 'mt-2 small text-danger';
+                Swal.fire({ icon: 'warning', title: 'รูปแบบรหัสไม่ถูกต้อง', text: 'กรุณากรอกรหัสครู 4 หลัก (ตัวเลข)', timer: 3000, timerProgressBar: true });
+                return;
+            }
+             if (SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) { showSweetAlert('error', 'Config Error', 'SCRIPT_URL not set', false); return; }
+
+            searchMessage.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> กำลังค้นหา...';
+            searchMessage.className = 'mt-2 small text-muted'; showLoading(true);
+
+            try {
+                 const url = `${SCRIPT_URL}?action=getTeacherStats&id=${encodeURIComponent(teacherId)}`;
+                 const response = await fetch(url);
+                 if (!response.ok) throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                 const data = await response.json();
+
+                 if (data.status === 'success') {
+                     statsDataCache = data.checkinHistory || [];
+                     displayTeacherStats(data.teacherInfo, statsDataCache);
+                     searchMessage.textContent = `พบข้อมูลสำหรับครู: ${data.teacherInfo?.name || teacherId}`;
+                     searchMessage.className = 'mt-2 small text-success';
+                     Swal.fire({ icon: 'success', title: 'พบข้อมูล', html: `แสดงข้อมูลสถิติสำหรับครู: <strong>${data.teacherInfo?.name || teacherId}</strong>`, timer: 3000, timerProgressBar: true, showConfirmButton:false });
+                 } else if (data.status === 'notfound') {
+                      searchMessage.textContent = data.message || `ไม่พบข้อมูลครูรหัส ${teacherId}`;
+                      searchMessage.className = 'mt-2 small text-warning';
+                      if (statsDataTable) statsDataTable.clear().draw();
+                      Swal.fire({ icon: 'warning', title: 'ไม่พบข้อมูล', text: data.message || `ไม่พบข้อมูลครูสำหรับรหัส ${teacherId}`, timer: 3000, timerProgressBar: true, showConfirmButton:false });
+                 } else {
+                     throw new Error(data.message || 'Failed to load teacher statistics');
+                 }
+            } catch (error) {
+                 console.error('Error loading teacher stats:', error);
+                 searchMessage.textContent = `เกิดข้อผิดพลาด: ${error.message}`;
+                 searchMessage.className = 'mt-2 small text-danger';
+                  if (statsDataTable) statsDataTable.clear().draw();
+                 Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: `ไม่สามารถโหลดข้อมูลสถิติได้: ${error.message}` });
+            } finally {
+                 showLoading(false);
+            }
+        }
+
+         function displayTeacherStats(teacherInfo, history) {
+            if (!teacherInfo || !searchResultArea) {
+                if(searchResultArea) searchResultArea.style.display = 'none';
+                if(statsDataTable) statsDataTable.clear().draw();
+                return;
+             }
+             statsTeacherPhoto.src = teacherInfo.photoUrl || PLACEHOLDER_IMG;
+             statsTeacherPhoto.onerror = () => { statsTeacherPhoto.src = PLACEHOLDER_IMG; };
+             statsTeacherName.textContent = teacherInfo.name || 'N/A';
+             statsTeacherDepartment.textContent = teacherInfo.department || 'N/A';
+             statsTeacherLevel.textContent = `${teacherInfo.level || 'N/A'}`;
+
+             let totalDaysSet = new Set(); let presentCount = 0; let leaveCount = 0; let tripCount = 0;
+             if (history && history.length > 0) {
+                 history.forEach(log => {
+                     totalDaysSet.add(moment(log.timestamp).format('YYYY-MM-DD'));
+                     const status = log.dutyOrStatus || '';
+                     if (status === 'ลา') leaveCount++;
+                     else if (status === 'ไปราชการ') tripCount++;
+                     else if (status.includes('มา') || status === 'เวรยืนประตู' || status === 'ตรวจอาคาร' || status === 'ระดับ' || status === 'กรรมการประจำจุด') presentCount++;
+                 });
+             }
+             statsTotalDaysEl.textContent = totalDaysSet.size;
+             statsPresentDaysEl.textContent = presentCount;
+             statsLeaveDaysEl.textContent = leaveCount;
+             statsTripDaysEl.textContent = tripCount;
+
+             if (statsDataTable) {
+                 statsDataTable.clear().rows.add(history || []).order([3, 'desc']).draw();
+             }
+             searchResultArea.style.display = 'block';
+             filterStatsTable();
+        }
+
+        function addStatsImageEventListeners() {
+             $('#statsTable tbody').off('click', 'img.stats-table-img').on('click', 'img.stats-table-img', function() {
+                const src = $(this).data('img-src');
+                 if (src && src !== CHECKIN_PHOTO_PLACEHOLDER) {
+                    Swal.fire({ imageUrl: src, imageHeight: 400, imageAlt: 'รูปที่บันทึก', confirmButtonText: 'ปิด' });
+                 }
+            });
+        }
+
+         function filterStatsTable() {
+             if (!statsDataTable || statsDataCache === null) return;
+             const selectedDuty = statsDutyFilterEl.value;
+             //const dateRange = $(statsDateFilterEl).data('daterangepicker');
+             //const startDate = dateRange && dateRange.startDate && dateRange.startDate.isValid() ? dateRange.startDate.startOf('day') : null;
+             //const endDate = dateRange && dateRange.endDate && dateRange.endDate.isValid() ? dateRange.endDate.endOf('day') : null;
+
+	     const dateInputVal = $(statsDateFilterEl).val(); // อ่านค่าจากช่อง input โดยตรง
+		let startDate = null;
+		let endDate = null;
+		
+		if (dateInputVal) { // ตรวจสอบว่าช่อง input มีค่า (ผู้ใช้ได้เลือกช่วงวันที่) หรือไม่
+		    const dateRange = $(statsDateFilterEl).data('daterangepicker');
+		    if (dateRange && dateRange.startDate && dateRange.startDate.isValid()) {
+		        startDate = dateRange.startDate.startOf('day');
+		    }
+		    if (dateRange && dateRange.endDate && dateRange.endDate.isValid()) {
+		        endDate = dateRange.endDate.endOf('day');
+		    }
+		}
+		// หาก dateInputVal ว่างเปล่า, startDate และ endDate จะยังคงเป็น null
+	 
+             $.fn.dataTable.ext.search.pop(); // Clear previous search functions
+             $.fn.dataTable.ext.search.push(
+                 function(settings, data, dataIndex) {
+                     const dutyStatusInRow = data[2] || ''; // Column for Duty/Status
+                     const timestampInRow = statsDataCache[dataIndex].timestamp; // Original ISO timestamp
+                     const recordDate = moment(timestampInRow);
+
+                     let dutyMatch = true;
+                     if (selectedDuty) {
+                         // For "มา (ไม่ระบุ)" we need an exact match.
+                         // For other duty types, also exact match.
+                         if (selectedDuty === "มา \\(ไม่ระบุ\\)") { // Check for the escaped value if that's what your dropdown sends
+                             dutyMatch = (dutyStatusInRow === "มา (ไม่ระบุ)");
+                         } else {
+                             dutyMatch = (dutyStatusInRow === selectedDuty);
+                         }
+                     }
+
+                     let dateMatch = true;
+                     if (startDate && endDate && recordDate.isValid()) {
+                         dateMatch = recordDate.isBetween(startDate, endDate, undefined, '[]');
+                     } else if ($(statsDateFilterEl).val() && (!startDate || !endDate)) { // If datepicker has text but dates are invalid
+                         dateMatch = false; // Consider it a non-match if filter is attempted with invalid dates
+                     }
+
+
+                     return dutyMatch && dateMatch;
+                 }
+             );
+             statsDataTable.draw();
+         }
+
+         function resetStatsFilters() {
+            $(statsDateFilterEl).val('');
+            const drp = $(statsDateFilterEl).data('daterangepicker');
+            if (drp) { // Ensure daterangepicker is initialized
+                drp.setStartDate(moment()); // Reset to avoid issues, or clear them
+                drp.setEndDate(moment());
+                $(statsDateFilterEl).val(''); // Explicitly clear the input
+            }
+            statsDutyFilterEl.value = "";
+            filterStatsTable(); // This will redraw with no filters active
+         }
+
+    </script>
+
+<script language="javascript">
+    // This function is from your original script to display clock on check-in page
+    function showTime(){
+        const now = new Date();
+        const thday = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัส","ศุกร์","เสาร์"];
+        const thmonth = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน", "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+
+        const h = now.getHours();
+        const m = now.getMinutes();
+        const s = now.getSeconds();
+
+        const formattedH = (h < 10 ? "0" : "") + h;
+        const formattedM = (m < 10 ? "0" : "") + m;
+        const formattedS = (s < 10 ? "0" : "") + s;
+
+        const time = "วัน" + thday[now.getDay()]+ "ที่ "+ now.getDate()+ " " +
+                     thmonth[now.getMonth()]+ " " + "พ.ศ."+ (now.getFullYear()+543) + // Corrected year
+                     " เวลา  " +  formattedH + ":" + formattedM + ":" + formattedS + " น.";
+
+        if (MyClockDisplay) { // Check if element exists
+             MyClockDisplay.innerText = time;
+             // MyClockDisplay.textContent = time; // innerText is usually sufficient
+        }
+        setTimeout(showTime, 1000);
+    }
+    // showTime(); // Called in DOMContentLoaded now
+</script>
+
+</body>
+</html>
