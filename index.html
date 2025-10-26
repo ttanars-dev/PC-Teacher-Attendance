@@ -417,7 +417,8 @@
 
                     <h5 class="mb-4"><i class="fas fa-edit me-2 text-primary"></i> บันทึกข้อมูลการปฏิบัติหน้าที่</h5>
                     <form id="checkinForm" novalidate>
-                         <div class="mb-3">
+                         <!-- *** MODIFICATION 1: Added id="teacherIdInputContainer" *** -->
+                         <div class="mb-3" id="teacherIdInputContainer">
                              <label for="teacherId" style="margin-left: 12px; margin-left: 15px;
                              margin-top: -14px; position: absolute; background-color: white; border: 2px solid white;"><i class="fas fa-id-card me-2 text-primary"></i>รหัสครูผู้สอน (4 ตัว)</label>
                              <input type="tel" class="form-control form-control-xl border border-danger "  style="height: 3.8rem;" id="teacherId" name="teacherId" required placeholder="กรอกรหัสครู (4 ตัว)" maxlength="4" inputmode="numeric" pattern="[0-9]*"> <div id="teacherLookupStatus" class="form-text mt-1 small text-muted"></div>
@@ -950,6 +951,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const MyClockDisplay = document.getElementById('MyClockDisplay'); // For check-in page clock
         const checkinForm = document.getElementById('checkinForm');
         const teacherIdInput = document.getElementById('teacherId');
+        // *** MODIFICATION 2: Define teacherIdInputContainer ***
+        const teacherIdInputContainer = document.getElementById('teacherIdInputContainer');
         const teacherLookupStatus = document.getElementById('teacherLookupStatus');
         const teacherInfoDiv = document.getElementById('teacherInfo');
         const dutyStatusSection = document.getElementById('dutyStatusSection');
@@ -1043,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const LEVEL_DUTY_MORNING_END = "08:00";
 
         const POINT_COMMITTEE_DUTY_MORNING_START = "07:00";
-        const POINT_COMMITTEE_DUTY_MORNING_END = "08:10";
+        const POINT_COMMITTEE_DUTY_MORNING_END = "23:59";
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1507,6 +1510,10 @@ function updateDashboardCards(counts) {
                 teacherLookupStatus.classList.remove('text-danger');
                 teacherLookupStatus.classList.add('text-success');
                 showBaseInfoAndDutyStatus();
+                
+                // *** MODIFICATION 3: Hide the teacher ID input container ***
+                if (teacherIdInputContainer) teacherIdInputContainer.style.display = 'none';
+
 
             } catch (error) {
                  if (Swal.isLoading()) Swal.close();
@@ -1534,6 +1541,9 @@ function updateDashboardCards(counts) {
             teacherInfoDiv.style.display = 'none';
             dutyStatusSection.style.display = 'none';
             hideDutySubSections();
+
+            // *** MODIFICATION 4: Show the teacher ID input container when resetting/clearing ***
+            if (teacherIdInputContainer) teacherIdInputContainer.style.display = 'block';
 
             if (teacherDataCache) teacherDataCache = null;
             hiddenTeacherName.value = ''; hiddenTeacherDepartment.value = '';
@@ -2031,13 +2041,41 @@ async function handleDutyStatusChange(event) {
                                 }
                             });
                         } else {
-                            showSweetAlert('error', 'ส่งข้อมูลไม่สำเร็จ', `ข้อผิดพลาด: ${errorMessage}`, false);
-                            teacherIdInput.value = '';
-                            hideAllCheckinSections(false);
-                            teacherLookupStatus.textContent = `ส่งข้อมูลไม่สำเร็จ กรุณาลองกรอกรหัสครูอีกครั้ง`;
-                            teacherLookupStatus.className = 'form-text mt-1 small text-danger';
-                            teacherIdInput.focus();
-                            checkFormCompletion();
+                            // --- MODIFIED ERROR HANDLING ---
+                            let errorTitle = 'ส่งข้อมูลไม่สำเร็จ';
+                            let errorHtml = `ข้อผิดพลาด: ${errorMessage}`;
+                            let resetFullForm = true; // By default, reset the form
+
+                            // Check for the specific distance error message from the server
+                            if (errorMessage.includes("เมตร") || errorMessage.includes("ตำแหน่งของคุณอยู่ไกลเกินไป")) {
+                                errorTitle = 'ไม่ได้อยู่ในจุดปฏิบัติหน้าที่??';
+                                errorHtml = errorMessage; // Use the direct message from the server
+                                resetFullForm = false; // Don't reset the form, just show the error
+                            } else if (errorMessage.includes("คุณได้ลงเวลาในช่วง")) {
+                                errorTitle = 'บันทึกข้อมูลซ้ำ';
+                                errorHtml = errorMessage;
+                                resetFullForm = true; // Reset the form if it's a duplicate entry
+                            } else if (errorMessage.includes("outside allowed windows") || errorMessage.includes("นอกเวลา")) {
+                                errorTitle = 'นอกเวลาทำการ';
+                                errorHtml = `ข้อผิดพลาด: ${errorMessage}`;
+                                resetFullForm = false; // Don't reset, let them see the time error
+                            }
+
+                            showSweetAlert('error', errorTitle, errorHtml, false);
+
+                            if (resetFullForm) {
+                                // Original reset logic for critical/duplicate errors
+                                teacherIdInput.value = '';
+                                hideAllCheckinSections(false);
+                                teacherLookupStatus.textContent = `ส่งข้อมูลไม่สำเร็จ กรุณาลองกรอกรหัสครูอีกครั้ง`;
+                                teacherLookupStatus.className = 'form-text mt-1 small text-danger';
+                                teacherIdInput.focus();
+                                checkFormCompletion();
+                            } else {
+                                // Just re-enable the submit button, don't reset
+                                checkFormCompletion(); // This will update the button state
+                            }
+                            // --- END MODIFIED ERROR HANDLING ---
                         }
                     }
                 }
