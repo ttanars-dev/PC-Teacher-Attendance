@@ -1046,7 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const LEVEL_DUTY_MORNING_END = "08:00";
 
         const POINT_COMMITTEE_DUTY_MORNING_START = "07:00";
-        const POINT_COMMITTEE_DUTY_MORNING_END = "23:59";
+        const POINT_COMMITTEE_DUTY_MORNING_END = "08:00";
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -1495,7 +1495,7 @@ function updateDashboardCards(counts) {
                  Swal.fire({
                     icon: 'success', title: 'พบข้อมูล',
                     html: `<strong>ชื่อ-สกุล:</strong> ${data.teacher.name || 'N/A'}`,
-                    timer: 2000, timerProgressBar: true, showConfirmButton: false
+                    timer: 500, timerProgressBar: true, showConfirmButton: false
                 });
 
                 teacherDataCache = data.teacher;
