@@ -259,7 +259,7 @@
                         <hr>
 						
 			<div class="text-center my-4"> <button type="button" class="btn btn-success btn-lg mx-2 mb-2 me-2" id="goToAttendanceBtn">
-                        <i class="fas fa-calendar-check me-2"></i>ลงเวลาปฏิบัติหน้าที่ประจำวัน
+                        <i class="fas fa-calendar-check me-2"></i>ลงเวลาปฏิบัติหน้าที่
                         </button>
                     </div>
 						
@@ -1271,7 +1271,8 @@ function isCheckinAllowedForSelectedDuty() {
         if (timeInMins < 360) {
             return { allowed: false, windowText: 'เริ่มบันทึกข้อมูลเวลา 06:00 น.', generalWindow: null };
         }
-        if (timeInMins > 540) {
+        //if (timeInMins > 540) {
+		if (timeInMins > 1440) {
             return { allowed: false, windowText: 'หมดเวลาบันทึกข้อมูล (เกิน 08:30 น.)', generalWindow: null };
         }
 
@@ -1281,7 +1282,8 @@ function isCheckinAllowedForSelectedDuty() {
 
         if (selectedDuty === 'โรงเรียน (Onsite)' || selectedDuty === 'ที่พักอาศัย (WFH)') {
              // หากอยู่ในช่วง 08:31 - 09:00 ให้แสดงข้อความว่า "มาสาย"
-             if (timeInMins > 510 && timeInMins <= 540) {
+             //if (timeInMins > 510 && timeInMins <= 540) {
+			 if (timeInMins > 510 && timeInMins <= 1440) {
                  return { allowed: true, windowText: 'บันทึกข้อมูล (สาย)', generalWindow: 'late' };
              }
              return { allowed: true, windowText: selectedDuty, generalWindow: 'all' };
@@ -1688,7 +1690,8 @@ async function handleCheckinFormSubmit(event) {
 
                      if (formData.get('dutyStatus') === 'มา') {
                          // หากเวลาบันทึกเกิน 08:30 (510 นาที) แต่ไม่เกิน 09:00 (540 นาที) ให้แอบเปลี่ยน Status เป็น "สาย"
-                         if (submitTimeInMins > 510 && submitTimeInMins <= 540) {
+                         //if (submitTimeInMins > 510 && submitTimeInMins <= 540) {
+						 if (submitTimeInMins > 510 && submitTimeInMins <= 1440) {
                              formData.set('dutyStatus', 'สาย');
                          }
                          formData.delete('remarks');
