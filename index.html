@@ -29,13 +29,46 @@
         .card-title { margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: normal;} /* Adjusted card title size */
         .card-text { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.2rem;} /* Adjusted card text margin */
         .card-text-small { font-size: 0.75em; color: rgba(255, 255, 255, 0.8); } /* Smaller text for units */
-        .loading-overlay {
-            position: fixed; /* Changed to fixed for full page */
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(255, 255, 255, 0.8); z-index: 1060; /* Higher z-index */
-            display: none; /* Hidden by default */ align-items: center; justify-content: center;
+        
+        /* --- NEW LOADING OVERLAY STYLES --- */
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); display: none;
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 99999; backdrop-filter: blur(8px); transition: opacity 0.3s ease;
         }
-         .loading-overlay.active { display: flex; } /* Show when active */
+        @keyframes progress-stripes {
+            from { background-position: 1rem 0, 0 0; }
+            to { background-position: 0 0, 0 0; }
+        }
+        .loading-bar-container {
+            width: 320px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            padding: 4px;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .loading-progress-bar {
+            background-image: 
+                linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent),
+                linear-gradient(to right, #6366f1, #9333ea);
+            background-size: 1rem 1rem, 100% 100%;
+            background-repeat: repeat, no-repeat;
+            color: white; font-size: 0.75rem; font-weight: bold; text-align: center;
+            padding: 6px; line-height: 1; border-radius: 9999px;
+            animation: progress-stripes 1s linear infinite;
+            transition: width 0.3s ease-out; width: 0%;
+        }
+        .loading-icon {
+            width: 96px; height: 96px; object-fit: contain; margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07));
+        }
+        .loading-text {
+            margin-top: 1rem; font-size: 0.875rem; font-weight: bold; color: #64748b;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
 
         .table-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 5px; vertical-align: middle; transition: transform 0.2s ease-in-out; }
         .table-img:hover { transform: scale(1.5); } /* Simple hover zoom */
@@ -81,11 +114,15 @@
     </style>
 </head>
 <body>
-     <div id="pageLoadingOverlay" class="loading-overlay">
-         <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-             <span class="visually-hidden">Loading...</span>
-         </div>
-     </div>
+    <div id="loading-overlay">
+        <div class="mb-4">
+            <img src="https://cdn-icons-gif.flaticon.com/13373/13373711.gif" alt="Loading..." class="loading-icon">
+        </div>
+        <div class="loading-bar-container">
+            <div id="loading-progress-bar" class="loading-progress-bar">0%</div>
+        </div>
+        <p class="loading-text" id="loading-text-msg">กำลังโหลดข้อมูล...</p>
+    </div>
 
     <div class="container-fluid mt-3 mb-4">
 
@@ -826,7 +863,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- DOM Elements ---
         const mainNavButtons = document.querySelectorAll('.main-nav .btn');
         const pageSections = document.querySelectorAll('.page-section');
-        const pageLoadingOverlay = document.getElementById('pageLoadingOverlay');
 
         // Page Specific Elements
         const homePage = document.getElementById('homePage');
@@ -946,13 +982,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // --- Helper Functions ---
+        let loadingInterval; // สำหรับ Animation Loading Bar
 
-        function showLoading(show) {
+        function showLoading(show, text = "กำลังโหลดข้อมูล...") {
+            const overlay = document.getElementById('loading-overlay');
+            const bar = document.getElementById('loading-progress-bar');
+            const msg = document.getElementById('loading-text-msg');
+
             if (show) {
-                 pageLoadingOverlay.classList.add('active');
+                if (msg) msg.innerText = text;
+                if (overlay) overlay.style.display = 'flex';
+                
+                let width = 0;
+                if (bar) { bar.style.width = '0%'; bar.innerText = '0%'; }
+                
+                if (loadingInterval) clearInterval(loadingInterval);
+                
+                loadingInterval = setInterval(() => {
+                    if (width < 90) width += Math.random() * 5;
+                    else if (width < 98) width += 0.2;
+                    if (bar) {
+                        bar.style.width = width + '%';
+                        bar.innerText = Math.round(width) + '%';
+                    }
+                }, 200);
             } else {
-                 setTimeout(() => pageLoadingOverlay.classList.remove('active'), 200);
-             }
+                if (loadingInterval) clearInterval(loadingInterval);
+                if (bar) { 
+                    bar.style.width = '100%'; 
+                    bar.innerText = '100%'; 
+                }
+                setTimeout(() => { 
+                    if (overlay) overlay.style.display = 'none'; 
+                }, 500);
+            }
         }
 
         function showSweetAlert(icon, title, html = '', timerOrDuration = true) {
@@ -1002,7 +1065,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function switchPage(targetPageId) {
-            showLoading(true);
+            showLoading(true, "กำลังโหลดหน้าต่างใหม่...");
 
             pageSections.forEach(section => section.classList.remove('active'));
             mainNavButtons.forEach(btn => btn.classList.remove('active'));
@@ -1023,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (targetButton) {
                 targetButton.classList.add('active');
             }
-            setTimeout(() => showLoading(false), 100);
+            setTimeout(() => showLoading(false), 200); // delay clear animation a bit
         }
 
         // --- Dashboard Functions ---
@@ -1031,7 +1094,7 @@ document.addEventListener('DOMContentLoaded', () => {
              $(dashboardDateFilterEl).daterangepicker({
                  singleDatePicker: true, showDropdowns: true, autoApply: true,
                  locale: {
-                     format: 'YYYY-MM-DD', applyLabel: 'เลือก', cancelLabel: 'ยกเลิก',
+                     format: 'DD-MMM-YYYY', applyLabel: 'เลือก', cancelLabel: 'ยกเลิก',
                      daysOfWeek: moment.weekdaysMin(), monthNames: moment.monthsShort(),
                      firstDay: moment.localeData('th').firstDayOfWeek()
                  },
@@ -1112,7 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function loadDashboardData() {
             if (!dashboardPage.classList.contains('active') || SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) return;
-            showLoading(true);
+            showLoading(true, "กำลังโหลดข้อมูล Dashboard...");
             const selectedDate = $(dashboardDateFilterEl).data('daterangepicker').startDate.format('YYYY-MM-DD');
             dashboardTableDateEl.textContent = `ข้อมูล ณ วัน${formatThaiDate(selectedDate)}`;
 
@@ -1272,7 +1335,7 @@ function isCheckinAllowedForSelectedDuty() {
             return { allowed: false, windowText: 'เริ่มบันทึกข้อมูลเวลา 06:00 น.', generalWindow: null };
         }
         //if (timeInMins > 540) {
-		if (timeInMins > 1440) {
+		if (timeInMins > 540) {
             return { allowed: false, windowText: 'หมดเวลาบันทึกข้อมูล (เกิน 08:30 น.)', generalWindow: null };
         }
 
@@ -1283,7 +1346,7 @@ function isCheckinAllowedForSelectedDuty() {
         if (selectedDuty === 'โรงเรียน (Onsite)' || selectedDuty === 'ที่พักอาศัย (WFH)') {
              // หากอยู่ในช่วง 08:31 - 09:00 ให้แสดงข้อความว่า "มาสาย"
              //if (timeInMins > 510 && timeInMins <= 540) {
-			 if (timeInMins > 510 && timeInMins <= 1440) {
+			 if (timeInMins > 510 && timeInMins <= 540) {
                  return { allowed: true, windowText: 'บันทึกข้อมูล (สาย)', generalWindow: 'late' };
              }
              return { allowed: true, windowText: selectedDuty, generalWindow: 'all' };
@@ -1325,16 +1388,16 @@ function isCheckinAllowedForSelectedDuty() {
              }
         }
 
-         function showLoadingAndFetchTeacher(teacherId) {
-            teacherLookupStatus.textContent = '';
-            Swal.fire({
-                title: 'กำลังค้นหาข้อมูลครู...', text: `รหัส: ${teacherId}`,
-                allowOutsideClick: false, allowEscapeKey: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-            hideAllCheckinSections(false);
-            fetchTeacherData(teacherId);
-        }
+		// --- แก้ไขจุดที่ 1 ---
+		function showLoadingAndFetchTeacher(teacherId) {
+			teacherLookupStatus.textContent = '';
+			
+			// เรียกใช้ Overlay แทน Swal.fire เดิม
+			showLoading(true, `กำลังค้นหาข้อมูลครูรหัส: ${teacherId}...`); 
+			
+			hideAllCheckinSections(false);
+			fetchTeacherData(teacherId);
+		}
 
         async function fetchTeacherData(teacherId) {
             if (!teacherId || SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) {
@@ -1384,10 +1447,13 @@ function isCheckinAllowedForSelectedDuty() {
                  teacherIdInput.focus();
                  teacherDataCache = null;
                  showSweetAlert('error', 'เกิดข้อผิดพลาด / ไม่พบข้อมูล', `รายละเอียด: ${error.message}`, false);
-             } finally {
-                 if (Swal.isLoading()) Swal.close();
-             }
-        }
+				// --- แก้ไขจุดที่ 2 ---
+				} finally {
+					 if (Swal.isLoading()) Swal.close(); // ปิด Swal เผื่อมีค้าง
+					 showLoading(false); // เพิ่มคำสั่งปิด Overlay
+				 }
+			}
+        
 
         function showBaseInfoAndDutyStatus() {
              teacherInfoDiv.style.display = 'block';
@@ -1674,15 +1740,18 @@ async function handleCheckinFormSubmit(event) {
 
             Swal.fire({
                 title: 'ยืนยันการส่งข้อมูล?',
-                html: `ครูผู้สอน: ${teacherDataCache?.name || 'N/A'}<br>สถานะ: ${document.querySelector('input[name="dutyStatus"]:checked')?.value || 'N/A'}<br>การปฏิบัติหน้าที่: ${getSelectedDutyType() || (document.querySelector('input[name="dutyStatus"]:checked')?.value !== 'มา' ? 'N/A' : 'ไม่ระบุ')}`,
+                html: `ครูผู้สอน: ${teacherDataCache?.name || 'N/A'}<br>สถานะ: ${document.querySelector('input[name="dutyStatus"]:checked')?.value || 'N/A'}<br>การปฏิบัติหน้าที่: ${getSelectedDutyType() || (document.querySelector('input[name="dutyStatus"]:checked')?.value !== 'มา' ? 'ไม่ระบุ' : 'ไม่ระบุ')}`,
                 icon: 'question', showCancelButton: true, confirmButtonColor: '#3085d6', cancelButtonColor: '#d33',
                 confirmButtonText: ' <i class="fas fa-check"></i> ใช่, ยืนยัน ', cancelButtonText: '<i class="fas fa-times"></i> ยกเลิก'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                    isSubmitting = true; statusMessage.innerHTML = ''; submitBtn.disabled = true;
-                    
-                    const formData = new FormData(checkinForm);
+				// --- แก้ไขจุดที่ 3 ---
+				}).then(async (result) => {
+					if (result.isConfirmed) {
+						// เปลี่ยนจาก Swal.fire มาใช้ Overlay
+						showLoading(true, "กำลังบันทึกข้อมูล กรุณารอสักครู่..."); 
+						
+						isSubmitting = true; statusMessage.innerHTML = ''; submitBtn.disabled = true;
+						
+						const formData = new FormData(checkinForm);
 
                     // --- เพิ่มเงื่อนไขตรวจสอบเวลาที่กดส่งข้อมูล ---
                     const nowSubmit = new Date();
@@ -1691,7 +1760,7 @@ async function handleCheckinFormSubmit(event) {
                      if (formData.get('dutyStatus') === 'มา') {
                          // หากเวลาบันทึกเกิน 08:30 (510 นาที) แต่ไม่เกิน 09:00 (540 นาที) ให้แอบเปลี่ยน Status เป็น "สาย"
                          //if (submitTimeInMins > 510 && submitTimeInMins <= 540) {
-						 if (submitTimeInMins > 510 && submitTimeInMins <= 1440) {
+						 if (submitTimeInMins > 510 && submitTimeInMins <= 540) {
                          }
                          formData.delete('remarks');
                      } else {
@@ -1716,11 +1785,15 @@ async function handleCheckinFormSubmit(event) {
                          }
                     } catch (error) {
                         console.error('Submit Error:', error); errorMessage = error.message || 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+					// --- ส่วนของ finally ในจุดที่ 3 ---
                     } finally {
                         if (Swal.isVisible() && Swal.isLoading()) Swal.close();
+                        
+                        showLoading(false); // เพิ่มคำสั่งปิด Overlay ทันทีที่บันทึกเสร็จ
+                        
                         isSubmitting = false; submitBtn.disabled = false;
 
-                        if (fetchSuccess && successData) { 
+                        if (fetchSuccess && successData) {
                             Swal.fire({
                                 icon: 'success', title: 'บันทึกสำเร็จ!',
                                 html: `<p class="mb-1"><strong>เวลา:</strong> ${successData.thaiDateTime}</p>
@@ -1891,7 +1964,7 @@ async function handleCheckinFormSubmit(event) {
              if (SCRIPT_URL.includes('YOUR_APPS_SCRIPT_WEB_APP_URL_HERE')) { showSweetAlert('error', 'Config Error', 'SCRIPT_URL not set', false); return; }
 
             searchMessage.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> กำลังค้นหา...';
-            searchMessage.className = 'mt-2 small text-muted'; showLoading(true);
+            searchMessage.className = 'mt-2 small text-muted'; showLoading(true, "กำลังค้นหาสถิติ...");
 
             try {
                  const url = `${SCRIPT_URL}?action=getTeacherStats&id=${encodeURIComponent(teacherId)}`;
