@@ -237,9 +237,11 @@
                 <div id="homePage" class="page-section active">
 
 <div class="container-fluid mt-0 mb-1 bg-light text-center">
-    <marquee behavior="scroll" direction="left" class="py-2" style="color: #000000; font-size: 16px;" onmouseover="this.stop();" onmouseout="this.start();">
-        <b><img src="https://lh5.googleusercontent.com/d/1cD2nVKNscJg1DJPnkaakah7Nz4ez_BZS" height="12" width="25"> ยินดีต้อนรับเข้าสู่ระบบลงเวลาครู โรงเรียนปากช่อง :: ออกแบบและพัฒนาโดย KT | Tanasarn Sirak <img src="https://lh5.googleusercontent.com/d/1cD2nVKNscJg1DJPnkaakah7Nz4ez_BZS" height="12" width="25"></b>
-    </marquee>
+    <div id="customMarqueeContainer" class="py-2" style="overflow: hidden; white-space: nowrap; width: 100%; position: relative;">
+        <div id="customMarqueeText" style="display: inline-block; font-size: 16px; color: #000000; font-weight: bold;">
+            <img src="https://lh5.googleusercontent.com/d/1cD2nVKNscJg1DJPnkaakah7Nz4ez_BZS" height="12" width="25"> ยินดีต้อนรับเข้าสู่ระบบลงเวลาครู โรงเรียนปากช่อง :: ออกแบบและพัฒนาโดย KT | Tanasarn Sirak <img src="https://lh5.googleusercontent.com/d/1cD2nVKNscJg1DJPnkaakah7Nz4ez_BZS" height="12" width="25">
+        </div>
+    </div>
 </div>
 
 
@@ -1252,24 +1254,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Changed logic to always allow checkin for new duty types
-        function isCheckinAllowedForSelectedDuty() {
-            const selectedDuty = getSelectedDutyType();
-            const currentStatus = document.querySelector('input[name="dutyStatus"]:checked')?.value;
-            
-            if (currentStatus === 'ลาป่วย' || currentStatus === 'ลากิจ' || currentStatus === 'ไปราชการ') {
-                return { allowed: true, windowText: '', generalWindow: null }; 
-            }
+// เปลี่ยนลอจิกให้ตรวจสอบเวลาสำหรับสถานะ "มา"
+function isCheckinAllowedForSelectedDuty() {
+    const selectedDuty = getSelectedDutyType();
+    const currentStatus = document.querySelector('input[name="dutyStatus"]:checked')?.value;
+    
+    if (currentStatus === 'ลาป่วย' || currentStatus === 'ลากิจ' || currentStatus === 'ไปราชการ') {
+        return { allowed: true, windowText: '', generalWindow: null }; 
+    }
 
-            if (currentStatus === 'มา' && !selectedDuty) {
-                 return { allowed: false, windowText: 'กรุณาเลือกการปฏิบัติหน้าที่', generalWindow: null };
-            }
+    if (currentStatus === 'มา') {
+        const now = new Date();
+        const timeInMins = now.getHours() * 60 + now.getMinutes();
 
-            if (selectedDuty === 'โรงเรียน (Onsite)' || selectedDuty === 'ที่พักอาศัย (WFH)') {
-                 return { allowed: true, windowText: selectedDuty, generalWindow: 'all' };
-            }
-
-            return { allowed: false, windowText: 'กรุณาเลือกการปฏิบัติหน้าที่ให้ถูกต้อง', generalWindow: null };
+        // แปลงเวลาเป็นนาที: 06:00 = 360 นาที, 08:30 = 510 นาที, 09:00 = 540 นาที
+        if (timeInMins < 360) {
+            return { allowed: false, windowText: 'เริ่มบันทึกข้อมูลเวลา 06:00 น.', generalWindow: null };
         }
+        if (timeInMins > 540) {
+            return { allowed: false, windowText: 'หมดเวลาบันทึกข้อมูล (เกิน 08:30 น.)', generalWindow: null };
+        }
+
+        if (!selectedDuty) {
+             return { allowed: false, windowText: 'กรุณาเลือกการปฏิบัติหน้าที่', generalWindow: null };
+        }
+
+        if (selectedDuty === 'โรงเรียน (Onsite)' || selectedDuty === 'ที่พักอาศัย (WFH)') {
+             // หากอยู่ในช่วง 08:31 - 09:00 ให้แสดงข้อความว่า "มาสาย"
+             if (timeInMins > 510 && timeInMins <= 540) {
+                 return { allowed: true, windowText: 'บันทึกข้อมูล (สาย)', generalWindow: 'late' };
+             }
+             return { allowed: true, windowText: selectedDuty, generalWindow: 'all' };
+        }
+    }
+
+    return { allowed: false, windowText: 'กรุณาเลือกการปฏิบัติหน้าที่ให้ถูกต้อง', generalWindow: null };
+}
 
         function updateClockAndButtonState() {
             const now = new Date();
@@ -1645,7 +1665,7 @@ async function handleDutyStatusChange(event) {
              errorDivs.forEach(div => { if (!exceptIds.includes(div.id)) div.textContent = ''; });
          }
 
-        async function handleCheckinFormSubmit(event) {
+async function handleCheckinFormSubmit(event) {
             event.preventDefault();
              if (isSubmitting) return;
             if (!validateForm()) return; 
@@ -1659,14 +1679,25 @@ async function handleDutyStatusChange(event) {
                 if (result.isConfirmed) {
                     Swal.fire({ title: 'กำลังบันทึกข้อมูล...', text: 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                     isSubmitting = true; statusMessage.innerHTML = ''; submitBtn.disabled = true;
+                    
                     const formData = new FormData(checkinForm);
 
+                    // --- เพิ่มเงื่อนไขตรวจสอบเวลาที่กดส่งข้อมูล ---
+                    const nowSubmit = new Date();
+                    const submitTimeInMins = nowSubmit.getHours() * 60 + nowSubmit.getMinutes();
+
                      if (formData.get('dutyStatus') === 'มา') {
+                         // หากเวลาบันทึกเกิน 08:30 (510 นาที) แต่ไม่เกิน 09:00 (540 นาที) ให้แอบเปลี่ยน Status เป็น "สาย"
+                         if (submitTimeInMins > 510 && submitTimeInMins <= 540) {
+                             formData.set('dutyStatus', 'สาย');
+                         }
                          formData.delete('remarks');
                      } else {
                           formData.delete('dutyType'); formData.delete('latitude'); formData.delete('longitude');
                           formData.delete('signatureData'); 
                      }
+                    // ----------------------------------------
+
                     formData.append('clientTimestamp', new Date().toISOString());
 
                      let fetchSuccess = false; let successData = null; let errorMessage = 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ';
@@ -1692,6 +1723,7 @@ async function handleDutyStatusChange(event) {
                                 icon: 'success', title: 'บันทึกสำเร็จ!',
                                 html: `<p class="mb-1"><strong>เวลา:</strong> ${successData.thaiDateTime}</p>
                                        <p class="mb-1"><strong>ผู้บันทึก:</strong> ${teacherDataCache?.name || 'N/A'}</p>
+                                       <p class="mb-1"><strong>สถานะที่บันทึก:</strong> ${successData.status}</p>
                                        <p class="mt-2 mb-0"><small>กำลังนำทางไปยัง Dashboard...</small></p>`,
                                 confirmButtonText: 'ตกลง', timer: 3500, timerProgressBar: true,
                                 willClose: () => {
@@ -2039,6 +2071,42 @@ async function handleDutyStatusChange(event) {
         }
         setTimeout(showTime, 1000);
     }
+	
+	
+	
+	// --- Custom Marquee Script ---
+        function initializeMarquee() {
+            const container = document.getElementById('customMarqueeContainer');
+            const text = document.getElementById('customMarqueeText');
+            if (!container || !text) return;
+
+            let containerWidth = container.offsetWidth;
+            let textWidth = text.offsetWidth;
+            // เริ่มต้นให้ข้อความอยู่ขวาสุดของขอบจอ
+            let currentX = containerWidth; 
+            let animationId;
+
+            function animate() {
+                currentX -= 1.5; // ปรับความเร็วตรงนี้ (ยิ่งมากยิ่งเร็ว)
+                
+                // ถอยจนข้อความหายไปทางซ้ายสุดแล้ว ให้กลับมาโผล่ทางขวาใหม่
+                if (currentX < -textWidth) {
+                    currentX = containerWidth;
+                }
+                text.style.transform = `translateX(${currentX}px)`;
+                animationId = requestAnimationFrame(animate);
+            }
+
+            // หยุดเมื่อเมาส์ชี้ และทำงานต่อเมื่อเอาเมาส์ออก
+            container.addEventListener('mouseenter', () => cancelAnimationFrame(animationId));
+            container.addEventListener('mouseleave', () => { animationId = requestAnimationFrame(animate); });
+            
+            // เรียกใช้งานครั้งแรก
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // อย่าลืมเรียกใช้งานฟังก์ชัน
+        initializeMarquee();
 </script>
 
 </body>
