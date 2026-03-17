@@ -1581,25 +1581,60 @@ async function handleDutyStatusChange(event) {
              }
          }
 
-         function handleLocationError(error) {
-             // แยกค่า code และ message ออกมาเพื่อไม่ให้ console แสดงเป็นออบเจ็กต์ว่าง {}
-             console.error('Geolocation Error Code:', error.code, 'Message:', error.message);
-             let msg = 'เกิดข้อผิดพลาดในการระบุตำแหน่ง: ';
-             switch (error.code) {
-                 case 1: // PERMISSION_DENIED
-                 case error.PERMISSION_DENIED: msg += 'ผู้ใช้ปฏิเสธการเข้าถึงตำแหน่ง หรือเบราว์เซอร์/ระบบไม่อนุญาต'; break;
-                 case 2: // POSITION_UNAVAILABLE
-                 case error.POSITION_UNAVAILABLE: msg += 'ไม่สามารถระบุตำแหน่งได้'; break;
-                 case 3: // TIMEOUT
-                 case error.TIMEOUT: msg += 'หมดเวลาในการค้นหาตำแหน่ง'; break;
-                 case -1: msg = error.message; break;
-                 default: msg += 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ (' + (error.message || 'ไม่มีรายละเอียด') + ')'; break;
-             }
-             locationInfoDiv.querySelector('span').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> ข้อผิดพลาดตำแหน่ง';
-             locationErrorDiv.textContent = msg;
-             latitudeInput.value = ''; longitudeInput.value = '';
-             const mapLink = locationInfoDiv.querySelector('a.map-link'); if(mapLink) mapLink.remove();
-         }
+		function handleLocationError(error) {
+			console.error('Geolocation Error Code:', error.code, 'Message:', error.message);
+			let msg = 'เกิดข้อผิดพลาดในการระบุตำแหน่ง: ';
+			let isDenied = false; // ตัวแปรเช็คว่าผู้ใช้บล็อกหรือไม่
+
+			switch (error.code) {
+				case 1: // PERMISSION_DENIED
+				case error.PERMISSION_DENIED: 
+					msg = 'ผู้ใช้บล็อกการเข้าถึงตำแหน่ง (Permission Denied)'; 
+					isDenied = true;
+					break;
+				case 2: // POSITION_UNAVAILABLE
+				case error.POSITION_UNAVAILABLE: 
+					msg += 'ไม่สามารถระบุตำแหน่งได้ กรุณาตรวจสอบการเปิด GPS บนอุปกรณ์'; 
+					break;
+				case 3: // TIMEOUT
+				case error.TIMEOUT: 
+					msg += 'หมดเวลาในการค้นหาตำแหน่ง สัญญาณอินเทอร์เน็ตหรือ GPS อาจไม่เสถียร'; 
+					break;
+				case -1: 
+					msg = error.message; 
+					break;
+				default: 
+					msg += 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ (' + (error.message || 'ไม่มีรายละเอียด') + ')'; 
+					break;
+			}
+
+			// อัปเดตข้อความแจ้งเตือนบนหน้าเว็บ
+			locationInfoDiv.querySelector('span').innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> ข้อผิดพลาดตำแหน่ง';
+			locationErrorDiv.textContent = msg;
+			latitudeInput.value = ''; 
+			longitudeInput.value = '';
+			const mapLink = locationInfoDiv.querySelector('a.map-link'); 
+			if(mapLink) mapLink.remove();
+
+			// หากตรวจพบว่าผู้ใช้เผลอกดบล็อกตำแหน่ง ให้แสดงหน้าต่างอธิบายวิธีแก้ไข
+			if (isDenied) {
+				Swal.fire({
+					icon: 'warning',
+					title: 'การเข้าถึงตำแหน่งถูกบล็อก',
+					html: `<div style="text-align: left; font-size: 0.95em; line-height: 1.6;">
+							ระบบจำเป็นต้องใช้ตำแหน่งที่ตั้งเพื่อบันทึกข้อมูล แต่เบราว์เซอร์ของคุณ <b>ไม่อนุญาต</b> อยู่<br><br>
+							<b>วิธีแก้ไข:</b>
+							<ul style="padding-left: 20px; margin-top: 5px;">
+								<li><b>iPhone (Safari):</b> แตะที่ไอคอน <b>aA</b> บนแถบที่อยู่เว็บ > เลือก <b>การตั้งค่าเว็บไซต์</b> > อนุญาตตำแหน่งที่ตั้ง</li>
+								<li><b>Android/PC (Chrome):</b> แตะไอคอน <b>แม่กุญแจ 🔒</b> บนแถบที่อยู่เว็บ > เลือก <b>สิทธิ์</b> > อนุญาตตำแหน่ง</li>
+								<li><b>เปิดผ่านแอป LINE:</b> แนะนำให้กดเมนู 3 จุดมุมขวาบน > เลือก <b>"เปิดด้วยเบราว์เซอร์เริ่มต้น"</b> แล้วทำตามขั้นตอนด้านบน</li>
+							</ul>
+						   </div>`,
+					confirmButtonText: 'เข้าใจแล้ว',
+					confirmButtonColor: '#3085d6'
+				});
+			}
+		}
 
          function initializeSignaturePad() {
               setTimeout(() => {
