@@ -1224,34 +1224,42 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        function updateDashboardCards(counts) {
-            let total = counts ? (counts.totalTeachers || 0) : 0;
-            let logged = counts ? (counts.loggedToday || 0) : 0;
-            let present = 0, sick = 0, personal = 0, trip = 0, late = 0;
+function updateDashboardCards(counts) {
+    // รับยอดรวมครูทั้งหมดมาจาก Server
+    let total = counts ? (counts.totalTeachers || 0) : 0;
+    
+    // ตั้งค่าตัวแปรเริ่มต้น
+    let present = 0, sick = 0, personal = 0, trip = 0, late = 0;
 
-            if (dashboardDataCache) {
-                dashboardDataCache.forEach(log => {
-                    const status = log.status || log.dutyStatus || log.dutyOrStatus || '';
-                    if (status.includes('มา') || status.includes('โรงเรียน') || status.includes('WFH')) present++;
-                    else if (status.includes('ลาป่วย')) sick++;
-                    else if (status.includes('ลากิจ')) personal++;
-                    else if (status.includes('ราชการ')) trip++;
-                    else if (status.includes('สาย')) late++; // นับคนที่สายหลังจากถูกเปลี่ยนสถานะด้านบน
-                });
-            }
+    // นำข้อมูลที่โหลดมาแสดงบนตาราง (dashboardDataCache) มานับแยกตามสถานะ
+    if (dashboardDataCache) {
+        dashboardDataCache.forEach(log => {
+            const status = log.status || log.dutyStatus || log.dutyOrStatus || '';
+            if (status.includes('มา') || status.includes('โรงเรียน') || status.includes('WFH')) present++;
+            else if (status.includes('ลาป่วย')) sick++;
+            else if (status.includes('ลากิจ')) personal++;
+            else if (status.includes('ราชการ')) trip++;
+            else if (status.includes('สาย')) late++; // นับคนที่สาย
+        });
+    }
 
-            if(totalTeachersCountEl) totalTeachersCountEl.textContent = total;
-            if(presentCountEl) presentCountEl.textContent = present;
-            if(sickLeaveCountEl) sickLeaveCountEl.textContent = sick;
-            if(personalLeaveCountEl) personalLeaveCountEl.textContent = personal;
-            if(businessTripCountEl) businessTripCountEl.textContent = trip;
+    // คำนวณยอดคนที่บันทึกข้อมูลแล้วทั้งหมด จากตัวเลขที่นับได้จริงบนหน้าจอ
+    let logged = present + sick + personal + trip + late;
 
-            // อัปเดตการ์ดสาย/ไม่บันทึก ให้แสดงจำนวนคนที่สายชัดเจน และจำนวนที่ยังไม่บันทึก
-            if(notLoggedCountEl) {
-                let unlogged = Math.max(0, total - logged);
-                notLoggedCountEl.innerHTML = `${late} <span style="font-size: 0.55em; color: rgba(255, 255, 255, 0.8); font-weight: normal;">(ขาด/ไม่บันทึก ${unlogged})</span>`;
-            }
-        }
+    // อัปเดตตัวเลขแสดงผลบนการ์ดแต่ละใบ
+    if(totalTeachersCountEl) totalTeachersCountEl.textContent = total;
+    if(presentCountEl) presentCountEl.textContent = present;
+    if(sickLeaveCountEl) sickLeaveCountEl.textContent = sick;
+    if(personalLeaveCountEl) personalLeaveCountEl.textContent = personal;
+    if(businessTripCountEl) businessTripCountEl.textContent = trip;
+
+    // อัปเดตการ์ดสาย/ไม่บันทึก ให้แสดงจำนวนคนที่สายชัดเจน และจำนวนที่ยังไม่บันทึก (ขาด)
+    if(notLoggedCountEl) {
+        // เอาจำนวนครูทั้งหมด ลบด้วย จำนวนคนที่บันทึกข้อมูลแล้ว
+        let unlogged = Math.max(0, total - logged);
+        notLoggedCountEl.innerHTML = `${late} <span style="font-size: 0.55em; color: rgba(255, 255, 255, 0.8); font-weight: normal;">(ขาด/ไม่บันทึก ${unlogged})</span>`;
+    }
+}
 
          function populateDepartmentFilter(selectElement, data) {
              if (!selectElement || !data) return;
